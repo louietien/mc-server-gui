@@ -5,6 +5,19 @@ const app = express()
 const docker = new Dockerode({ socketPath: '/var/run/docker.sock' })
 const CONTAINER_NAME = process.env.MC_CONTAINER_NAME || 'mc-'
 
+const AUTH_USER = process.env.AUTH_USER
+const AUTH_PASS = process.env.AUTH_PASS
+
+app.use((req, res, next) => {
+  if (!AUTH_USER || !AUTH_PASS) return next()
+  const header = req.headers['authorization'] || ''
+  const b64 = header.startsWith('Basic ') ? header.slice(6) : ''
+  const [user, pass] = Buffer.from(b64, 'base64').toString().split(':')
+  if (user === AUTH_USER && pass === AUTH_PASS) return next()
+  res.set('WWW-Authenticate', 'Basic realm="MC Server"')
+  res.status(401).send('Unauthorized')
+})
+
 app.use(express.static('public'))
 app.use(express.json())
 
