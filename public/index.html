@@ -121,7 +121,11 @@
       try {
         const res = await fetch('/api/status')
         const data = await res.json()
-        setState(data.running ? 'online' : 'offline', data.status)
+        if (data.missing) {
+          setState('missing', 'Container not found')
+        } else {
+          setState(data.running ? 'online' : 'offline', data.status)
+        }
       } catch {
         setState('error', 'Could not reach server')
       }

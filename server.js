@@ -24,13 +24,15 @@ app.use(express.json())
 async function getContainer() {
   const containers = await docker.listContainers({ all: true })
   const info = containers.find(c => c.Names.some(n => n.replace('/', '').startsWith(CONTAINER_NAME)))
-  if (!info) throw new Error('Minecraft container not found')
+  if (!info) return null
   return { container: docker.getContainer(info.Id), state: info.State, status: info.Status }
 }
 
 app.get('/api/status', async (req, res) => {
   try {
-    const { state, status } = await getContainer()
+    const result = await getContainer()
+    if (!result) return res.json({ running: false, status: 'not found', missing: true })
+    const { state, status } = result
     res.json({ running: state === 'running', status })
   } catch (e) {
     res.status(500).json({ error: e.message })
@@ -39,7 +41,9 @@ app.get('/api/status', async (req, res) => {
 
 app.post('/api/start', async (req, res) => {
   try {
-    const { container, state } = await getContainer()
+    const result = await getContainer()
+    if (!result) return res.status(404).json({ error: 'Minecraft container not found' })
+    const { container, state } = result
     if (state !== 'running') await container.start()
     res.json({ ok: true })
   } catch (e) {
@@ -49,7 +53,9 @@ app.post('/api/start', async (req, res) => {
 
 app.post('/api/stop', async (req, res) => {
   try {
-    const { container, state } = await getContainer()
+    const result = await getContainer()
+    if (!result) return res.status(404).json({ error: 'Minecraft container not found' })
+    const { container, state } = result
     if (state === 'running') await container.stop()
     res.json({ ok: true })
   } catch (e) {
