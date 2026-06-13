@@ -42,7 +42,7 @@ app.get('/api/status', async (req, res) => {
 app.post('/api/start', async (req, res) => {
   try {
     const result = await getContainer()
-    if (!result) return res.status(404).json({ error: 'Minecraft container not found' })
+    if (!result) return res.json({ ok: false, error: 'Minecraft container not found' })
     const { container, state } = result
     if (state !== 'running') await container.start()
     res.json({ ok: true })
@@ -54,7 +54,7 @@ app.post('/api/start', async (req, res) => {
 app.post('/api/stop', async (req, res) => {
   try {
     const result = await getContainer()
-    if (!result) return res.status(404).json({ error: 'Minecraft container not found' })
+    if (!result) return res.json({ ok: false, error: 'Minecraft container not found' })
     const { container, state } = result
     if (state === 'running') await container.stop()
     res.json({ ok: true })
