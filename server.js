@@ -31,6 +31,7 @@ const AUTH_USER = process.env.AUTH_USER
 const AUTH_PASS = process.env.AUTH_PASS
 const SESSION_SECRET = process.env.SESSION_SECRET || 'mc-gui-secret'
 
+app.set('trust proxy', true)
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(session({
