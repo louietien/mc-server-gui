@@ -136,12 +136,16 @@
       const text = document.getElementById('status-text')
       const btnStart = document.getElementById('btn-start')
       const btnStop = document.getElementById('btn-stop')
+      const feedback = document.getElementById('feedback')
 
       dot.className = 'dot ' + (state === 'online' ? 'online' : state === 'offline' ? 'offline' : 'loading')
       text.textContent = label || state
 
       btnStart.classList.toggle('hidden', state !== 'offline')
       btnStop.classList.toggle('hidden', state !== 'online')
+
+      if (state === 'online' || state === 'offline') feedback.textContent = ''
+
       currentState = state
     }
 
