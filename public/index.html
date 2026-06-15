@@ -57,6 +57,14 @@
       box-shadow: 0 24px 80px rgba(0,0,0,0.6);
     }
 
+    .card-icon {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      margin-bottom: 12px;
+      image-rendering: pixelated;
+    }
+
     .card-title {
       font-size: 14px;
       font-weight: 600;
@@ -137,6 +145,7 @@
     <img class="logo" src="/mc-logo.svg" alt="Minecraft" />
 
     <div class="card" id="card-mc">
+      <img class="card-icon" src="/mc-logo.svg" alt="Survival" />
       <div class="card-title">Survival :25565</div>
       <div class="status-row">
         <div class="dot loading" id="dot-mc"></div>
@@ -150,6 +159,7 @@
     </div>
 
     <div class="card" id="card-skyblock">
+      <img class="card-icon" src="/skyblock-icon.png" alt="Skyblock" />
       <div class="card-title">Skyblock :25566</div>
       <div class="status-row">
         <div class="dot loading" id="dot-skyblock"></div>
