@@ -22,14 +22,10 @@ app.use(session({
 function requireAuth(req, res, next) {
   if (!AUTH_USER || !AUTH_PASS) return next()
   if (req.session.authenticated) return next()
+  if (req.path === '/login.html' || req.path === '/login') return next()
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' })
   res.redirect('/login.html')
 }
-
-app.get('/login.html', (req, res, next) => {
-  if (req.session.authenticated) return res.redirect('/')
-  next()
-})
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body
