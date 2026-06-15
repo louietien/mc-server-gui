@@ -15,22 +15,23 @@ No build step — the app runs directly with Node.
 
 Single-file Node.js backend (`server.js`) + single-file frontend (`public/index.html`). No framework, no bundler.
 
-**Backend** connects to the Docker daemon via the Unix socket (`/var/run/docker.sock`) using `dockerode`. It finds the Minecraft container by matching `MC_CONTAINER_NAME` as a prefix against container names (e.g. `mc-ybm749g4du2qaudvl6dfwsim`). Three API routes: `GET /api/status`, `POST /api/start`, `POST /api/stop`.
+**Backend** connects to the Docker daemon via the Unix socket (`/var/run/docker.sock`) using `dockerode`. Finds containers by prefix from env vars. Routes accept `?server=mc|skyblock`: `GET /api/status`, `POST /api/start`, `POST /api/stop`.
 
-**Frontend** is a single vanilla HTML file served as a static asset. It polls `/api/status` every 8 seconds and shows one button at a time (Start or Stop) based on container state.
+**Frontend** is a single vanilla HTML file served as a static asset. Shows two server cards (Survival + Skyblock), each polling `/api/status?server=<id>` every 8 seconds independently.
 
 ## Environment Variables
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `MC_CONTAINER_NAME` | `mc-` | Prefix used to find the Minecraft container via `docker ps` |
+| `MC_CONTAINER_NAME` | `mc-` | Prefix to find Survival container |
+| `SKYBLOCK_CONTAINER_NAME` | `skyblock-` | Prefix to find Skyblock container |
 | `PORT` | `3005` | Port the HTTP server listens on |
 
 ## Deployment (Coolify)
 
 1. Push repo to GitHub
 2. Coolify → New Resource → Application → select the repo
-3. Set env var: `MC_CONTAINER_NAME=mc-ybm749g4du2qaudvl6dfwsim`
+3. Set env vars: `MC_CONTAINER_NAME=mc-ybm749g4du2qaudvl6dfwsim`, `SKYBLOCK_CONTAINER_NAME=mc-ex2lov9altg9keg3u5hoz2b0`
 4. Under the service's Volumes tab, add a bind mount: `/var/run/docker.sock` → `/var/run/docker.sock`
 5. Assign a domain (e.g. `mc.lthm.dk`)
 
