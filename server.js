@@ -83,6 +83,7 @@ app.post('/api/start', async (req, res) => {
     if (!result) return res.json({ ok: false, error: 'Container not found' })
     const { container, state } = result
     if (state !== 'running') await container.start()
+    addLog(req, 'start', req.query.server || 'mc')
     res.json({ ok: true })
   } catch (e) {
     res.status(500).json({ error: e.message })
@@ -97,10 +98,24 @@ app.post('/api/stop', async (req, res) => {
     if (!result) return res.json({ ok: false, error: 'Container not found' })
     const { container, state } = result
     if (state === 'running') await container.stop()
+    addLog(req, 'stop', req.query.server || 'mc')
     res.json({ ok: true })
   } catch (e) {
     res.status(500).json({ error: e.message })
   }
+})
+
+const activityLog = []
+
+function addLog(req, action, server) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip
+  const user = req.session?.authenticated ? (process.env.AUTH_USER || 'user') : 'anonymous'
+  activityLog.unshift({ time: new Date().toISOString(), action, server, ip, user })
+  if (activityLog.length > 100) activityLog.pop()
+}
+
+app.get('/api/log', requireAuth, (req, res) => {
+  res.json(activityLog)
 })
 
 const PORT = process.env.PORT || 3005

@@ -27,16 +27,26 @@
       z-index: 0;
     }
 
-    .page {
+    .layout {
       position: relative;
       z-index: 1;
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      padding: 24px 16px;
+      width: 100%;
+      max-width: 900px;
+      justify-content: center;
+    }
+
+    .page {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 20px;
       width: 100%;
       max-width: 440px;
-      padding: 24px 16px;
+      flex-shrink: 0;
     }
 
     .logo {
@@ -140,45 +150,119 @@
       text-decoration: none;
     }
     .logout:hover { color: #94a3b8; }
+
+    /* Log panel */
+    .log-panel {
+      background: rgba(15, 17, 23, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 20px;
+      width: 260px;
+      flex-shrink: 0;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      align-self: stretch;
+    }
+
+    .log-panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #475569;
+      margin-bottom: 14px;
+    }
+
+    .log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      max-height: 520px;
+    }
+
+    .log-entry {
+      border-left: 2px solid #1e293b;
+      padding-left: 10px;
+    }
+    .log-entry.start { border-color: #22c55e; }
+    .log-entry.stop  { border-color: #ef4444; }
+
+    .log-action {
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+    .log-entry.start .log-action { color: #4ade80; }
+    .log-entry.stop  .log-action { color: #f87171; }
+
+    .log-meta {
+      font-size: 11px;
+      color: #475569;
+      margin-top: 2px;
+    }
+
+    .log-empty {
+      font-size: 12px;
+      color: #334155;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    @media (max-width: 760px) {
+      .log-panel { display: none; }
+    }
   </style>
 </head>
 <body>
   <div class="bg"></div>
-  <div class="page">
-    <img class="logo" src="/mc-logo.svg" alt="Minecraft" />
+  <div class="layout">
+    <div class="page">
+      <img class="logo" src="/mc-logo.svg" alt="Minecraft" />
 
-    <div class="card" id="card-mc">
-      <img class="card-icon" src="/mc-logo.svg" alt="Survival" />
-      <div class="card-title">Survival :25565</div>
-      <div class="status-row">
-        <div class="dot loading" id="dot-mc"></div>
-        <span class="status-text" id="status-mc">Checking…</span>
+      <div class="card" id="card-mc">
+        <img class="card-icon" src="/mc-logo.svg" alt="Survival" />
+        <div class="card-title">Survival :25565</div>
+        <div class="status-row">
+          <div class="dot loading" id="dot-mc"></div>
+          <span class="status-text" id="status-mc">Checking…</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn-start hidden" id="start-mc" onclick="action('mc','start')">Start</button>
+          <button class="btn-stop  hidden" id="stop-mc"  onclick="action('mc','stop')">Stop</button>
+        </div>
+        <div class="feedback" id="feedback-mc"></div>
       </div>
-      <div class="btn-row">
-        <button class="btn-start hidden" id="start-mc" onclick="action('mc','start')">Start</button>
-        <button class="btn-stop  hidden" id="stop-mc"  onclick="action('mc','stop')">Stop</button>
+
+      <div class="card" id="card-skyblock">
+        <img class="card-icon" src="/skyblock-icon.png" alt="Skyblock" />
+        <div class="card-title">Skyblock :25566</div>
+        <div class="status-row">
+          <div class="dot loading" id="dot-skyblock"></div>
+          <span class="status-text" id="status-skyblock">Checking…</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn-start hidden" id="start-skyblock" onclick="action('skyblock','start')">Start</button>
+          <button class="btn-stop  hidden" id="stop-skyblock"  onclick="action('skyblock','stop')">Stop</button>
+        </div>
+        <div class="feedback" id="feedback-skyblock"></div>
       </div>
-      <div class="feedback" id="feedback-mc"></div>
+
+      <a href="/logout" class="logout">Sign out</a>
     </div>
 
-    <div class="card" id="card-skyblock">
-      <img class="card-icon" src="/skyblock-icon.png" alt="Skyblock" />
-      <div class="card-title">Skyblock :25566</div>
-      <div class="status-row">
-        <div class="dot loading" id="dot-skyblock"></div>
-        <span class="status-text" id="status-skyblock">Checking…</span>
+    <div class="log-panel">
+      <div class="log-panel-title">Activity</div>
+      <div class="log-list" id="log-list">
+        <div class="log-empty">No activity yet</div>
       </div>
-      <div class="btn-row">
-        <button class="btn-start hidden" id="start-skyblock" onclick="action('skyblock','start')">Start</button>
-        <button class="btn-stop  hidden" id="stop-skyblock"  onclick="action('skyblock','stop')">Stop</button>
-      </div>
-      <div class="feedback" id="feedback-skyblock"></div>
     </div>
-
-    <a href="/logout" class="logout">Sign out</a>
   </div>
 
   <script>
+    const SERVER_LABELS = { mc: 'Survival', skyblock: 'Skyblock' }
+
     async function poll(server) {
       try {
         const res = await fetch('/api/status?server=' + server)
@@ -223,6 +307,7 @@
         if (!data.ok) throw new Error(data.error || 'Unknown error')
         feedback.textContent = cmd === 'start' ? 'Starting up…' : 'Stopped.'
         setTimeout(() => poll(server), 2000)
+        pollLog()
       } catch (e) {
         feedback.textContent = 'Error: ' + e.message
         poll(server)
@@ -231,11 +316,36 @@
       }
     }
 
+    async function pollLog() {
+      try {
+        const res = await fetch('/api/log')
+        const entries = await res.json()
+        const list = document.getElementById('log-list')
+        if (!entries.length) {
+          list.innerHTML = '<div class="log-empty">No activity yet</div>'
+          return
+        }
+        list.innerHTML = entries.map(e => {
+          const d = new Date(e.time)
+          const time = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' })
+            + ' ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })
+          const label = SERVER_LABELS[e.server] || e.server
+          const verb  = e.action === 'start' ? 'Started' : 'Stopped'
+          return `<div class="log-entry ${e.action}">
+            <div class="log-action">${verb} ${label}</div>
+            <div class="log-meta">${e.ip} · ${time}</div>
+          </div>`
+        }).join('')
+      } catch {}
+    }
+
     const SERVERS = ['mc', 'skyblock']
     SERVERS.forEach(s => {
       poll(s)
       setInterval(() => poll(s), 8000)
     })
+    pollLog()
+    setInterval(pollLog, 15000)
   </script>
 </body>
 </html>
