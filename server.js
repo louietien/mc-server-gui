@@ -1,4 +1,5 @@
 const express = require('express')
+const session = require('express-session')
 const Dockerode = require('dockerode')
 
 const app = express()
@@ -7,19 +8,45 @@ const CONTAINER_NAME = process.env.MC_CONTAINER_NAME || 'mc-'
 
 const AUTH_USER = process.env.AUTH_USER
 const AUTH_PASS = process.env.AUTH_PASS
+const SESSION_SECRET = process.env.SESSION_SECRET || 'mc-gui-secret'
 
-app.use((req, res, next) => {
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
+app.use(session({
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }
+}))
+
+function requireAuth(req, res, next) {
   if (!AUTH_USER || !AUTH_PASS) return next()
-  const header = req.headers['authorization'] || ''
-  const b64 = header.startsWith('Basic ') ? header.slice(6) : ''
-  const [user, pass] = Buffer.from(b64, 'base64').toString().split(':')
-  if (user === AUTH_USER && pass === AUTH_PASS) return next()
-  res.set('WWW-Authenticate', 'Basic realm="MC Server"')
-  res.status(401).send('Unauthorized')
+  if (req.session.authenticated) return next()
+  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' })
+  res.redirect('/login.html')
+}
+
+app.get('/login.html', (req, res, next) => {
+  if (req.session.authenticated) return res.redirect('/')
+  next()
 })
 
+app.post('/login', (req, res) => {
+  const { username, password } = req.body
+  if (username === AUTH_USER && password === AUTH_PASS) {
+    req.session.authenticated = true
+    return res.redirect('/')
+  }
+  res.redirect('/login.html?error=1')
+})
+
+app.get('/logout', (req, res) => {
+  req.session.destroy()
+  res.redirect('/login.html')
+})
+
+app.use(requireAuth)
 app.use(express.static('public'))
-app.use(express.json())
 
 async function getContainer() {
   const containers = await docker.listContainers({ all: true })
