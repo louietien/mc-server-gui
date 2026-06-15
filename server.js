@@ -1,6 +1,7 @@
 const express = require('express')
 const session = require('express-session')
 const Dockerode = require('dockerode')
+const net = require('net')
 const fs = require('fs')
 const path = require('path')
 
@@ -26,10 +27,107 @@ const SERVERS = {
   mc:       process.env.MC_CONTAINER_NAME       || 'mc-',
   skyblock: process.env.SKYBLOCK_CONTAINER_NAME || 'skyblock-',
 }
+const PORTS = {
+  mc:       parseInt(process.env.MC_PORT)       || 25565,
+  skyblock: parseInt(process.env.SKYBLOCK_PORT) || 25566,
+}
+const AUTO_STOP_MS = (parseInt(process.env.AUTO_STOP_MINUTES) || 30) * 60 * 1000
 
 const AUTH_USER = process.env.AUTH_USER
 const AUTH_PASS = process.env.AUTH_PASS
 const SESSION_SECRET = process.env.SESSION_SECRET || 'mc-gui-secret'
+
+// --- MC Server List Ping (SLP) ---
+
+function varInt(val) {
+  const out = []
+  do {
+    let b = val & 0x7f
+    val >>>= 7
+    if (val) b |= 0x80
+    out.push(b)
+  } while (val)
+  return Buffer.from(out)
+}
+
+function mcPing(host, port, timeout = 2000) {
+  return new Promise(resolve => {
+    const sock = new net.Socket()
+    sock.setTimeout(timeout)
+    let data = Buffer.alloc(0)
+
+    sock.connect(port, host, () => {
+      const addrBuf = Buffer.from(host, 'utf8')
+      const hs = Buffer.concat([
+        varInt(0x00), varInt(760),
+        varInt(addrBuf.length), addrBuf,
+        Buffer.from([(port >> 8) & 0xff, port & 0xff]),
+        varInt(1),
+      ])
+      sock.write(Buffer.concat([varInt(hs.length), hs]))
+      const req = varInt(0x00)
+      sock.write(Buffer.concat([varInt(req.length), req]))
+    })
+
+    sock.on('data', chunk => {
+      data = Buffer.concat([data, chunk])
+      try {
+        let i = 0
+        while (data[i++] & 0x80) {}
+        while (data[i++] & 0x80) {}
+        let len = 0, shift = 0
+        for (;;) {
+          const b = data[i++]
+          len |= (b & 0x7f) << shift
+          if (!(b & 0x80)) break
+          shift += 7
+        }
+        if (data.length < i + len) return
+        resolve(JSON.parse(data.slice(i, i + len).toString()))
+        sock.destroy()
+      } catch {}
+    })
+
+    sock.on('timeout', () => { sock.destroy(); resolve(null) })
+    sock.on('error',   () => resolve(null))
+  })
+}
+
+// --- Auto-stop ---
+
+const autoStopTimers = new Map()
+
+function scheduleAutoStop(serverKey) {
+  if (autoStopTimers.has(serverKey)) return
+  const scheduledAt = Date.now()
+  const timer = setTimeout(async () => {
+    autoStopTimers.delete(serverKey)
+    try {
+      const result = await getContainer(SERVERS[serverKey])
+      if (result?.state === 'running') {
+        await result.container.stop()
+        addLogEntry('stop', serverKey, 'system')
+        console.log(`Auto-stopped ${serverKey}`)
+      }
+    } catch (e) {
+      console.error(`Auto-stop failed for ${serverKey}:`, e.message)
+    }
+  }, AUTO_STOP_MS)
+  autoStopTimers.set(serverKey, { timer, scheduledAt })
+}
+
+function cancelAutoStop(serverKey) {
+  const entry = autoStopTimers.get(serverKey)
+  if (entry) { clearTimeout(entry.timer); autoStopTimers.delete(serverKey) }
+}
+
+function autoStopRemaining(serverKey) {
+  const entry = autoStopTimers.get(serverKey)
+  if (!entry) return null
+  return Math.max(0, Math.round((entry.scheduledAt + AUTO_STOP_MS - Date.now()) / 1000))
+}
+
+// --- Express setup ---
 
 app.set('trust proxy', true)
 app.use(express.json())
@@ -67,11 +165,24 @@ app.get('/logout', (req, res) => {
 app.use(requireAuth)
 app.use(express.static('public'))
 
+// --- Docker helpers ---
+
 async function getContainer(prefix) {
   const containers = await docker.listContainers({ all: true })
   const info = containers.find(c => c.Names.some(n => n.replace('/', '').startsWith(prefix)))
   if (!info) return null
-  return { container: docker.getContainer(info.Id), state: info.State, status: info.Status }
+  const container = docker.getContainer(info.Id)
+  let startedAt = null
+  let containerIp = null
+  if (info.State === 'running') {
+    try {
+      const details = await container.inspect()
+      startedAt = details.State.StartedAt
+      const networks = details.NetworkSettings.Networks
+      containerIp = Object.values(networks)[0]?.IPAddress || null
+    } catch {}
+  }
+  return { container, state: info.State, status: info.Status, startedAt, containerIp }
 }
 
 function resolvePrefix(req, res) {
@@ -81,14 +192,62 @@ function resolvePrefix(req, res) {
   return prefix
 }
 
+// --- Activity log ---
+
+const activityLog = loadLog()
+
+function addLogEntry(action, server, ip) {
+  activityLog.unshift({ time: new Date().toISOString(), action, server, ip: ip || 'system', user: 'system' })
+  if (activityLog.length > 1000) activityLog.pop()
+  saveLog()
+}
+
+function addLog(req, action, server) {
+  const ip = req.headers['cf-connecting-ip']
+    || req.headers['x-real-ip']
+    || req.headers['x-forwarded-for']?.split(',')[0].trim()
+    || req.ip
+  const user = req.session?.authenticated ? (process.env.AUTH_USER || 'user') : 'anonymous'
+  activityLog.unshift({ time: new Date().toISOString(), action, server, ip, user })
+  if (activityLog.length > 1000) activityLog.pop()
+  saveLog()
+}
+
+app.get('/api/log', requireAuth, (req, res) => {
+  res.json(activityLog)
+})
+
+// --- Routes ---
+
 app.get('/api/status', async (req, res) => {
+  const key = req.query.server || 'mc'
   const prefix = resolvePrefix(req, res)
   if (!prefix) return
   try {
     const result = await getContainer(prefix)
     if (!result) return res.json({ running: false, status: 'not found', missing: true })
-    const { state, status } = result
-    res.json({ running: state === 'running', status })
+
+    const { state, status, startedAt, containerIp } = result
+    const running = state === 'running'
+    let players = null
+    let uptime = null
+
+    if (running) {
+      uptime = startedAt ? Math.round((Date.now() - new Date(startedAt)) / 1000) : null
+      if (containerIp) {
+        const ping = await mcPing(containerIp, PORTS[key])
+        if (ping?.players) players = ping.players
+      }
+    }
+
+    if (running && players !== null) {
+      if (players.online === 0) scheduleAutoStop(key)
+      else cancelAutoStop(key)
+    } else {
+      cancelAutoStop(key)
+    }
+
+    res.json({ running, status, uptime, players, autoStopIn: autoStopRemaining(key) })
   } catch (e) {
     res.status(500).json({ error: e.message })
   }
@@ -117,28 +276,12 @@ app.post('/api/stop', async (req, res) => {
     if (!result) return res.json({ ok: false, error: 'Container not found' })
     const { container, state } = result
     if (state === 'running') await container.stop()
+    cancelAutoStop(req.query.server || 'mc')
     addLog(req, 'stop', req.query.server || 'mc')
     res.json({ ok: true })
   } catch (e) {
     res.status(500).json({ error: e.message })
   }
-})
-
-const activityLog = loadLog()
-
-function addLog(req, action, server) {
-  const ip = req.headers['cf-connecting-ip']
-    || req.headers['x-real-ip']
-    || req.headers['x-forwarded-for']?.split(',')[0].trim()
-    || req.ip
-  const user = req.session?.authenticated ? (process.env.AUTH_USER || 'user') : 'anonymous'
-  activityLog.unshift({ time: new Date().toISOString(), action, server, ip, user })
-  if (activityLog.length > 1000) activityLog.pop()
-  saveLog()
-}
-
-app.get('/api/log', requireAuth, (req, res) => {
-  res.json(activityLog)
 })
 
 const PORT = process.env.PORT || 3005

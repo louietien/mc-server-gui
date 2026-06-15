@@ -88,7 +88,7 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 8px;
     }
 
     .dot {
@@ -107,6 +107,20 @@
       font-size: 14px;
       color: #94a3b8;
     }
+
+    .card-meta {
+      font-size: 12px;
+      color: #475569;
+      margin-bottom: 16px;
+      min-height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .card-meta .players { color: #64748b; }
+    .card-meta .sep     { color: #2d3748; }
 
     .btn-row {
       display: flex;
@@ -139,6 +153,13 @@
       font-size: 12px;
       color: #64748b;
       min-height: 18px;
+    }
+
+    .autostop {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #f59e0b;
+      min-height: 16px;
     }
 
     .logout {
@@ -229,11 +250,13 @@
           <div class="dot loading" id="dot-mc"></div>
           <span class="status-text" id="status-mc">Checking…</span>
         </div>
+        <div class="card-meta" id="meta-mc"></div>
         <div class="btn-row">
           <button class="btn-start hidden" id="start-mc" onclick="action('mc','start')">Start</button>
           <button class="btn-stop  hidden" id="stop-mc"  onclick="action('mc','stop')">Stop</button>
         </div>
         <div class="feedback" id="feedback-mc"></div>
+        <div class="autostop" id="autostop-mc"></div>
       </div>
 
       <div class="card" id="card-skyblock">
@@ -243,11 +266,13 @@
           <div class="dot loading" id="dot-skyblock"></div>
           <span class="status-text" id="status-skyblock">Checking…</span>
         </div>
+        <div class="card-meta" id="meta-skyblock"></div>
         <div class="btn-row">
           <button class="btn-start hidden" id="start-skyblock" onclick="action('skyblock','start')">Start</button>
           <button class="btn-stop  hidden" id="stop-skyblock"  onclick="action('skyblock','stop')">Stop</button>
         </div>
         <div class="feedback" id="feedback-skyblock"></div>
+        <div class="autostop" id="autostop-skyblock"></div>
       </div>
 
       <a href="/logout" class="logout">Sign out</a>
@@ -264,26 +289,44 @@
   <script>
     const SERVER_LABELS = { mc: 'Survival', skyblock: 'Skyblock' }
 
+    function formatUptime(s) {
+      if (!s) return null
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60)
+      if (h > 0) return `↑ ${h}h ${m}m`
+      if (m > 0) return `↑ ${m}m`
+      return `↑ <1m`
+    }
+
+    function formatAutoStop(s) {
+      if (s === null) return ''
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60)
+      if (h > 0) return `Auto-stop in ${h}h ${m}m`
+      if (m > 0) return `Auto-stop in ${m}m`
+      return `Auto-stop in <1m`
+    }
+
     async function poll(server) {
       try {
         const res = await fetch('/api/status?server=' + server)
         const data = await res.json()
         if (data.missing) {
-          setState(server, 'missing', 'Container not found')
+          setState(server, 'missing', 'Container not found', null, null, null)
         } else {
-          setState(server, data.running ? 'online' : 'offline', data.status)
+          setState(server, data.running ? 'online' : 'offline', data.status, data.uptime, data.players, data.autoStopIn)
         }
       } catch {
-        setState(server, 'error', 'Could not reach server')
+        setState(server, 'error', 'Could not reach server', null, null, null)
       }
     }
 
-    function setState(server, state, label) {
+    function setState(server, state, label, uptime, players, autoStopIn) {
       const dot      = document.getElementById('dot-' + server)
       const text     = document.getElementById('status-' + server)
       const btnStart = document.getElementById('start-' + server)
       const btnStop  = document.getElementById('stop-' + server)
       const feedback = document.getElementById('feedback-' + server)
+      const meta     = document.getElementById('meta-' + server)
+      const autostop = document.getElementById('autostop-' + server)
 
       dot.className = 'dot ' + (state === 'online' ? 'online' : state === 'offline' ? 'offline' : 'loading')
       text.textContent = label || state
@@ -292,6 +335,18 @@
       btnStop.classList.toggle('hidden',  state !== 'online')
 
       if (state === 'online' || state === 'offline') feedback.textContent = ''
+
+      if (state === 'online') {
+        const parts = []
+        const up = formatUptime(uptime)
+        if (up) parts.push(`<span>${up}</span>`)
+        if (players !== null) parts.push(`<span class="sep">·</span><span class="players">${players.online} / ${players.max} online</span>`)
+        meta.innerHTML = parts.join('')
+        autostop.textContent = formatAutoStop(autoStopIn)
+      } else {
+        meta.innerHTML = ''
+        autostop.textContent = ''
+      }
     }
 
     async function action(server, cmd) {
@@ -299,7 +354,7 @@
       const btn      = document.getElementById(btnId)
       const feedback = document.getElementById('feedback-' + server)
       btn.disabled = true
-      setState(server, 'loading', cmd === 'start' ? 'Starting…' : 'Stopping…')
+      setState(server, 'loading', cmd === 'start' ? 'Starting…' : 'Stopping…', null, null, null)
       feedback.textContent = ''
 
       try {
@@ -328,8 +383,8 @@
         }
         list.innerHTML = entries.map(e => {
           const d = new Date(e.time)
-          const time = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' })
-            + ' ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })
+          const time = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+            + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
           const label = SERVER_LABELS[e.server] || e.server
           const verb  = e.action === 'start' ? 'Started' : 'Stopped'
           return `<div class="log-entry ${e.action}">
