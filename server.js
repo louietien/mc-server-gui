@@ -1,6 +1,23 @@
 const express = require('express')
 const session = require('express-session')
 const Dockerode = require('dockerode')
+const fs = require('fs')
+const path = require('path')
+
+const LOG_FILE = path.join(__dirname, 'data', 'activity.json')
+
+function loadLog() {
+  try {
+    fs.mkdirSync(path.dirname(LOG_FILE), { recursive: true })
+    return JSON.parse(fs.readFileSync(LOG_FILE, 'utf8'))
+  } catch { return [] }
+}
+
+function saveLog() {
+  fs.writeFile(LOG_FILE, JSON.stringify(activityLog), err => {
+    if (err) console.error('Failed to save log:', err.message)
+  })
+}
 
 const app = express()
 const docker = new Dockerode({ socketPath: '/var/run/docker.sock' })
@@ -105,13 +122,14 @@ app.post('/api/stop', async (req, res) => {
   }
 })
 
-const activityLog = []
+const activityLog = loadLog()
 
 function addLog(req, action, server) {
   const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip
   const user = req.session?.authenticated ? (process.env.AUTH_USER || 'user') : 'anonymous'
   activityLog.unshift({ time: new Date().toISOString(), action, server, ip, user })
-  if (activityLog.length > 100) activityLog.pop()
+  if (activityLog.length > 1000) activityLog.pop()
+  saveLog()
 }
 
 app.get('/api/log', requireAuth, (req, res) => {
