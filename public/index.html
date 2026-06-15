@@ -31,12 +31,11 @@
       position: relative;
       z-index: 1;
       display: flex;
-      align-items: flex-start;
-      gap: 20px;
-      padding: 24px 16px;
-      width: 100%;
-      max-width: 900px;
+      align-items: center;
       justify-content: center;
+      min-height: 100vh;
+      width: 100%;
+      padding: 24px 16px;
     }
 
     .page {
@@ -46,7 +45,6 @@
       gap: 20px;
       width: 100%;
       max-width: 440px;
-      flex-shrink: 0;
     }
 
     .logo {
@@ -153,16 +151,19 @@
 
     /* Log panel */
     .log-panel {
+      position: fixed;
+      right: 24px;
+      top: 50%;
+      transform: translateY(-50%);
       background: rgba(15, 17, 23, 0.72);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 16px;
       padding: 20px;
-      width: 260px;
-      flex-shrink: 0;
+      width: 240px;
       box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-      align-self: stretch;
+      z-index: 2;
     }
 
     .log-panel-title {
@@ -251,12 +252,12 @@
 
       <a href="/logout" class="logout">Sign out</a>
     </div>
+  </div>
 
-    <div class="log-panel">
-      <div class="log-panel-title">Activity</div>
-      <div class="log-list" id="log-list">
-        <div class="log-empty">No activity yet</div>
-      </div>
+  <div class="log-panel">
+    <div class="log-panel-title">Activity</div>
+    <div class="log-list" id="log-list">
+      <div class="log-empty">No activity yet</div>
     </div>
   </div>
 
