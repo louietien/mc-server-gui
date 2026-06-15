@@ -45,6 +45,7 @@ function requireAuth(req, res, next) {
   if (!AUTH_USER || !AUTH_PASS) return next()
   if (req.session.authenticated) return next()
   if (req.path === '/login.html' || req.path === '/login') return next()
+  if (/\.(svg|png|jpg|jpeg|ico|webp|css|js)$/i.test(req.path)) return next()
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' })
   res.redirect('/login.html')
 }
