@@ -127,7 +127,10 @@ app.post('/api/stop', async (req, res) => {
 const activityLog = loadLog()
 
 function addLog(req, action, server) {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip
+  const ip = req.headers['cf-connecting-ip']
+    || req.headers['x-real-ip']
+    || req.headers['x-forwarded-for']?.split(',')[0].trim()
+    || req.ip
   const user = req.session?.authenticated ? (process.env.AUTH_USER || 'user') : 'anonymous'
   activityLog.unshift({ time: new Date().toISOString(), action, server, ip, user })
   if (activityLog.length > 1000) activityLog.pop()
