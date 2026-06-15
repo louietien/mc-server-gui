@@ -4,39 +4,75 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MC Server</title>
+  <link rel="icon" type="image/svg+xml" href="mc-logo.svg" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0f1117;
       color: #e2e8f0;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bg {
+      position: fixed;
+      inset: -20px;
+      background: url('bg.jpg') center/cover no-repeat;
+      filter: blur(12px) brightness(0.45);
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 440px;
+      padding: 24px 16px;
+    }
+
+    .logo {
+      width: 140px;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
     }
 
     .card {
-      background: #1a1d27;
-      border: 1px solid #2d3148;
+      background: rgba(15, 17, 23, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1);
       border-radius: 16px;
-      padding: 48px 56px;
-      text-align: center;
+      padding: 28px 32px;
       width: 100%;
-      max-width: 380px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      text-align: center;
     }
 
-    .icon {
-      font-size: 48px;
-      margin-bottom: 16px;
+    .card-icon {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      margin-bottom: 12px;
+      image-rendering: pixelated;
     }
 
-    h1 {
-      font-size: 22px;
+    .card-title {
+      font-size: 14px;
       font-weight: 600;
-      color: #f1f5f9;
-      margin-bottom: 32px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 16px;
     }
 
     .status-row {
@@ -44,7 +80,7 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      margin-bottom: 36px;
+      margin-bottom: 20px;
     }
 
     .dot {
@@ -60,16 +96,22 @@
     .dot.loading { background: #f59e0b; }
 
     .status-text {
-      font-size: 15px;
+      font-size: 14px;
       color: #94a3b8;
     }
 
+    .btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
     button {
-      width: 100%;
-      padding: 14px;
+      flex: 1;
+      padding: 11px;
       border: none;
-      border-radius: 10px;
-      font-size: 15px;
+      border-radius: 8px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       transition: opacity 0.2s, transform 0.1s;
@@ -77,101 +119,123 @@
     button:active { transform: scale(0.98); }
     button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-    #btn-start {
-      background: #22c55e;
-      color: #fff;
-    }
-    #btn-stop {
-      background: #ef4444;
-      color: #fff;
-    }
-    #btn-start:hover:not(:disabled) { opacity: 0.88; }
-    #btn-stop:hover:not(:disabled)  { opacity: 0.88; }
+    .btn-start { background: #22c55e; color: #fff; }
+    .btn-stop  { background: #ef4444; color: #fff; }
+    .btn-start:hover:not(:disabled) { opacity: 0.88; }
+    .btn-stop:hover:not(:disabled)  { opacity: 0.88; }
 
     .hidden { display: none; }
 
     .feedback {
-      margin-top: 16px;
-      font-size: 13px;
+      margin-top: 12px;
+      font-size: 12px;
       color: #64748b;
-      min-height: 20px;
+      min-height: 18px;
     }
+
+    .logout {
+      display: block;
+      font-size: 13px;
+      color: #475569;
+      text-decoration: none;
+    }
+    .logout:hover { color: #94a3b8; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="icon">⛏️</div>
-    <h1>Minecraft Server</h1>
+  <div class="bg"></div>
+  <div class="page">
+    <img class="logo" src="/mc-logo.svg" alt="Minecraft" />
 
-    <div class="status-row">
-      <div class="dot loading" id="dot"></div>
-      <span class="status-text" id="status-text">Checking…</span>
+    <div class="card" id="card-mc">
+      <img class="card-icon" src="/mc-logo.svg" alt="Survival" />
+      <div class="card-title">Survival :25565</div>
+      <div class="status-row">
+        <div class="dot loading" id="dot-mc"></div>
+        <span class="status-text" id="status-mc">Checking…</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-start hidden" id="start-mc" onclick="action('mc','start')">Start</button>
+        <button class="btn-stop  hidden" id="stop-mc"  onclick="action('mc','stop')">Stop</button>
+      </div>
+      <div class="feedback" id="feedback-mc"></div>
     </div>
 
-    <button id="btn-start" class="hidden" onclick="action('start')">Start Server</button>
-    <button id="btn-stop"  class="hidden" onclick="action('stop')">Stop Server</button>
+    <div class="card" id="card-skyblock">
+      <img class="card-icon" src="/skyblock-icon.png" alt="Skyblock" />
+      <div class="card-title">Skyblock :25566</div>
+      <div class="status-row">
+        <div class="dot loading" id="dot-skyblock"></div>
+        <span class="status-text" id="status-skyblock">Checking…</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-start hidden" id="start-skyblock" onclick="action('skyblock','start')">Start</button>
+        <button class="btn-stop  hidden" id="stop-skyblock"  onclick="action('skyblock','stop')">Stop</button>
+      </div>
+      <div class="feedback" id="feedback-skyblock"></div>
+    </div>
 
-    <div class="feedback" id="feedback"></div>
+    <a href="/logout" class="logout">Sign out</a>
   </div>
 
   <script>
-    let currentState = null
-
-    async function poll() {
+    async function poll(server) {
       try {
-        const res = await fetch('/api/status')
+        const res = await fetch('/api/status?server=' + server)
         const data = await res.json()
         if (data.missing) {
-          setState('missing', 'Container not found')
+          setState(server, 'missing', 'Container not found')
         } else {
-          setState(data.running ? 'online' : 'offline', data.status)
+          setState(server, data.running ? 'online' : 'offline', data.status)
         }
       } catch {
-        setState('error', 'Could not reach server')
+        setState(server, 'error', 'Could not reach server')
       }
     }
 
-    function setState(state, label) {
-      const dot = document.getElementById('dot')
-      const text = document.getElementById('status-text')
-      const btnStart = document.getElementById('btn-start')
-      const btnStop = document.getElementById('btn-stop')
-      const feedback = document.getElementById('feedback')
+    function setState(server, state, label) {
+      const dot      = document.getElementById('dot-' + server)
+      const text     = document.getElementById('status-' + server)
+      const btnStart = document.getElementById('start-' + server)
+      const btnStop  = document.getElementById('stop-' + server)
+      const feedback = document.getElementById('feedback-' + server)
 
       dot.className = 'dot ' + (state === 'online' ? 'online' : state === 'offline' ? 'offline' : 'loading')
       text.textContent = label || state
 
       btnStart.classList.toggle('hidden', state !== 'offline')
-      btnStop.classList.toggle('hidden', state !== 'online')
+      btnStop.classList.toggle('hidden',  state !== 'online')
 
       if (state === 'online' || state === 'offline') feedback.textContent = ''
-
-      currentState = state
     }
 
-    async function action(cmd) {
-      const btn = document.getElementById(cmd === 'start' ? 'btn-start' : 'btn-stop')
-      const feedback = document.getElementById('feedback')
+    async function action(server, cmd) {
+      const btnId   = (cmd === 'start' ? 'start-' : 'stop-') + server
+      const btn      = document.getElementById(btnId)
+      const feedback = document.getElementById('feedback-' + server)
       btn.disabled = true
-      setState('loading', cmd === 'start' ? 'Starting…' : 'Stopping…')
+      setState(server, 'loading', cmd === 'start' ? 'Starting…' : 'Stopping…')
       feedback.textContent = ''
 
       try {
-        const res = await fetch('/api/' + cmd, { method: 'POST' })
+        const res  = await fetch('/api/' + cmd + '?server=' + server, { method: 'POST' })
         const data = await res.json()
         if (!data.ok) throw new Error(data.error || 'Unknown error')
-        feedback.textContent = cmd === 'start' ? 'Server is starting up…' : 'Server stopped.'
-        setTimeout(poll, 2000)
+        feedback.textContent = cmd === 'start' ? 'Starting up…' : 'Stopped.'
+        setTimeout(() => poll(server), 2000)
       } catch (e) {
         feedback.textContent = 'Error: ' + e.message
-        poll()
+        poll(server)
       } finally {
         btn.disabled = false
       }
     }
 
-    poll()
-    setInterval(poll, 8000)
+    const SERVERS = ['mc', 'skyblock']
+    SERVERS.forEach(s => {
+      poll(s)
+      setInterval(() => poll(s), 8000)
+    })
   </script>
 </body>
 </html>
