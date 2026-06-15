@@ -4,76 +4,100 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MC Server — Sign In</title>
+  <link rel="icon" type="image/svg+xml" href="mc-logo.svg" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0f1117;
       color: #e2e8f0;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bg {
+      position: fixed;
+      inset: -20px;
+      background: url('bg.jpg') center/cover no-repeat;
+      filter: blur(12px) brightness(0.45);
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 440px;
+      padding: 24px 16px;
+    }
+
+    .logo {
+      width: 140px;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
     }
 
     .card {
-      background: #1a1d27;
-      border: 1px solid #2d3148;
+      background: rgba(15, 17, 23, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1);
       border-radius: 16px;
-      padding: 48px 56px;
-      text-align: center;
+      padding: 36px 32px;
       width: 100%;
-      max-width: 380px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      text-align: center;
     }
 
-    .icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-    }
-
-    h1 {
-      font-size: 22px;
-      font-weight: 600;
-      color: #f1f5f9;
-      margin-bottom: 8px;
-    }
-
-    .subtitle {
+    .card-title {
       font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
       color: #64748b;
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
 
     .field {
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       text-align: left;
     }
 
     label {
       display: block;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
-      color: #94a3b8;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
       margin-bottom: 6px;
     }
 
     input {
       width: 100%;
       padding: 11px 14px;
-      background: #0f1117;
-      border: 1px solid #2d3148;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
       border-radius: 8px;
       color: #f1f5f9;
-      font-size: 15px;
+      font-size: 14px;
       outline: none;
       transition: border-color 0.2s;
     }
     input:focus { border-color: #4f6ef7; }
 
     .error {
-      background: #ef444420;
-      border: 1px solid #ef444440;
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.25);
       border-radius: 8px;
       color: #f87171;
       font-size: 13px;
@@ -84,10 +108,10 @@
 
     button[type="submit"] {
       width: 100%;
-      padding: 14px;
+      padding: 12px;
       border: none;
-      border-radius: 10px;
-      font-size: 15px;
+      border-radius: 8px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       background: #4f6ef7;
@@ -100,26 +124,33 @@
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="icon">⛏️</div>
-    <h1>Minecraft Server</h1>
-    <p class="subtitle">Sign in to continue</p>
+  <div class="bg"></div>
+  <div class="page">
+    <img class="logo" src="/mc-logo.svg" alt="Minecraft" />
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div style="font-size:13px;font-weight:600;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.6)">Peter's giant horse cock</div>
+      <div style="font-size:13px;font-style:italic;color:#64748b;text-shadow:0 2px 8px rgba(0,0,0,0.6)">8===D</div>
+    </div>
 
-    <form method="POST" action="/login">
-      <div id="error-msg" class="error" style="display:none">Incorrect username or password.</div>
+    <div class="card">
+      <div class="card-title">Sign in to continue</div>
 
-      <div class="field">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" autocomplete="username" autofocus required />
-      </div>
+      <form method="POST" action="/login">
+        <div id="error-msg" class="error" style="display:none">Incorrect username or password.</div>
 
-      <div class="field">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" required />
-      </div>
+        <div class="field">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" autocomplete="username" autofocus required />
+        </div>
 
-      <button type="submit">Sign In</button>
-    </form>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required />
+        </div>
+
+        <button type="submit">Sign In</button>
+      </form>
+    </div>
   </div>
 
   <script>
