@@ -309,11 +309,7 @@
       try {
         const res = await fetch('/api/status?server=' + server)
         const data = await res.json()
-        if (data.missing) {
-          setState(server, 'missing', 'Container not found', null, null, null)
-        } else {
-          setState(server, data.running ? 'online' : 'offline', data.status, data.uptime, data.players, data.autoStopIn)
-        }
+        setState(server, data.running ? 'online' : 'offline', data.running ? 'Up' : 'Down', data.uptime, data.players, data.autoStopIn)
       } catch {
         setState(server, 'error', 'Could not reach server', null, null, null)
       }
@@ -331,7 +327,7 @@
       dot.className = 'dot ' + (state === 'online' ? 'online' : state === 'offline' ? 'offline' : 'loading')
       text.textContent = label || state
 
-      btnStart.classList.toggle('hidden', state !== 'offline' && state !== 'missing')
+      btnStart.classList.toggle('hidden', state !== 'offline')
       btnStop.classList.toggle('hidden',  state !== 'online')
 
       if (state === 'online' || state === 'offline') feedback.textContent = ''
