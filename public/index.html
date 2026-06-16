@@ -336,6 +336,7 @@
   <script>
     const SERVER_LABELS = { mc: 'Survival', skyblock: 'Skyblock' }
     const serverState = {}
+    const polling = {}
 
     function formatUptime(s) {
       if (!s) return null
@@ -421,12 +422,14 @@
     }
 
     async function pollUntilOnline(server, timeout = 120000, interval = 4000) {
+      polling[server] = true
       const deadline = Date.now() + timeout
       const check = async () => {
         try {
           const res = await fetch('/api/status?server=' + server)
           const data = await res.json()
           if (data.running) {
+            polling[server] = false
             setState(server, 'online', 'Up', data.uptime, data.players, data.autoStopIn, data.version, data.lastStopped)
             return
           }
@@ -435,6 +438,7 @@
           setState(server, 'loading', 'Starting…', null, null, null, null, null)
           setTimeout(check, interval)
         } else {
+          polling[server] = false
           poll(server)
         }
       }
@@ -510,7 +514,7 @@
     const SERVERS = ['mc', 'skyblock']
     SERVERS.forEach(s => {
       poll(s)
-      setInterval(() => poll(s), 8000)
+      setInterval(() => { if (!polling[s]) poll(s) }, 8000)
     })
     pollLog()
     setInterval(pollLog, 15000)
