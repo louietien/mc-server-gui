@@ -122,7 +122,7 @@ async function stopServer(serverKey) {
 async function startServer(serverKey) {
   const { prefix, uuid } = SERVERS[serverKey]
   if (COOLIFY_API_TOKEN && uuid) {
-    await coolifyAction(uuid, 'start')
+    await coolifyAction(uuid, 'restart')
   } else {
     const result = await getContainer(prefix)
     if (!result) throw new Error('Container not found')
