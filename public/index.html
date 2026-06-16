@@ -345,6 +345,27 @@
       }
     }
 
+    async function pollUntilOnline(server, timeout = 120000, interval = 4000) {
+      const deadline = Date.now() + timeout
+      const check = async () => {
+        try {
+          const res = await fetch('/api/status?server=' + server)
+          const data = await res.json()
+          if (data.running) {
+            setState(server, 'online', 'Up', data.uptime, data.players, data.autoStopIn)
+            return
+          }
+        } catch {}
+        if (Date.now() < deadline) {
+          setState(server, 'loading', 'Starting…', null, null, null)
+          setTimeout(check, interval)
+        } else {
+          poll(server)
+        }
+      }
+      setTimeout(check, interval)
+    }
+
     async function action(server, cmd) {
       const btnId   = (cmd === 'start' ? 'start-' : 'stop-') + server
       const btn      = document.getElementById(btnId)
@@ -358,7 +379,11 @@
         const data = await res.json()
         if (!data.ok) throw new Error(data.error || 'Unknown error')
         feedback.textContent = cmd === 'start' ? 'Starting up…' : 'Stopped.'
-        setTimeout(() => poll(server), 2000)
+        if (cmd === 'start') {
+          pollUntilOnline(server)
+        } else {
+          setTimeout(() => poll(server), 2000)
+        }
         pollLog()
       } catch (e) {
         feedback.textContent = 'Error: ' + e.message
