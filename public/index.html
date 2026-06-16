@@ -455,6 +455,7 @@
       const btn      = document.getElementById(btnId)
       const feedback = document.getElementById('feedback-' + server)
       btn.disabled = true
+      polling[server] = true
       setState(server, 'loading', cmd === 'start' ? 'Starting…' : 'Stopping…', null, null, null, null, null)
       feedback.textContent = ''
 
@@ -464,12 +465,13 @@
         if (!data.ok) throw new Error(data.error || 'Unknown error')
         feedback.textContent = cmd === 'start' ? 'Starting up…' : 'Stopped.'
         if (cmd === 'start') {
-          pollUntilOnline(server)
+          pollUntilOnline(server)  // clears polling[server] when done
         } else {
-          setTimeout(() => poll(server), 2000)
+          setTimeout(() => { polling[server] = false; poll(server) }, 2000)
         }
         pollLog()
       } catch (e) {
+        polling[server] = false
         feedback.textContent = 'Error: ' + e.message
         poll(server)
       } finally {
