@@ -24,9 +24,12 @@ const app = express()
 const docker = new Dockerode({ socketPath: '/var/run/docker.sock' })
 
 const SERVERS = {
-  mc:       process.env.MC_CONTAINER_NAME       || 'mc-',
-  skyblock: process.env.SKYBLOCK_CONTAINER_NAME || 'skyblock-',
+  mc:       { prefix: process.env.MC_CONTAINER_NAME       || 'mc-',       uuid: process.env.MC_COOLIFY_UUID       || '' },
+  skyblock: { prefix: process.env.SKYBLOCK_CONTAINER_NAME || 'skyblock-', uuid: process.env.SKYBLOCK_COOLIFY_UUID || '' },
 }
+
+const COOLIFY_API_URL   = process.env.COOLIFY_API_URL   || 'http://coolify:8000'
+const COOLIFY_API_TOKEN = process.env.COOLIFY_API_TOKEN || ''
 const PORTS = {
   mc:       parseInt(process.env.MC_PORT)       || 25565,
   skyblock: parseInt(process.env.SKYBLOCK_PORT) || 25566,
@@ -103,7 +106,7 @@ function scheduleAutoStop(serverKey) {
   const timer = setTimeout(async () => {
     autoStopTimers.delete(serverKey)
     try {
-      const result = await getContainer(SERVERS[serverKey])
+      const result = await getContainer(SERVERS[serverKey].prefix)
       if (result?.state === 'running') {
         await result.container.stop()
         addLogEntry('stop', serverKey, 'system')
@@ -187,9 +190,9 @@ async function getContainer(prefix) {
 
 function resolvePrefix(req, res) {
   const key = req.query.server || 'mc'
-  const prefix = SERVERS[key]
-  if (!prefix) { res.status(400).json({ error: 'Unknown server' }); return null }
-  return prefix
+  const server = SERVERS[key]
+  if (!server) { res.status(400).json({ error: 'Unknown server' }); return null }
+  return server.prefix
 }
 
 // --- Activity log ---
@@ -254,14 +257,28 @@ app.get('/api/status', async (req, res) => {
 })
 
 app.post('/api/start', async (req, res) => {
+  const key = req.query.server || 'mc'
   const prefix = resolvePrefix(req, res)
   if (!prefix) return
   try {
     const result = await getContainer(prefix)
-    if (!result) return res.json({ ok: false, error: 'Container not found' })
+    if (!result) {
+      const { uuid } = SERVERS[key]
+      if (!uuid || !COOLIFY_API_TOKEN) return res.json({ ok: false, error: 'Container not found' })
+      const r = await fetch(`${COOLIFY_API_URL}/api/v1/services/${uuid}/start`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${COOLIFY_API_TOKEN}` },
+      })
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}))
+        throw new Error(d.message || `Coolify API error ${r.status}`)
+      }
+      addLog(req, 'start', key)
+      return res.json({ ok: true })
+    }
     const { container, state } = result
     if (state !== 'running') await container.start()
-    addLog(req, 'start', req.query.server || 'mc')
+    addLog(req, 'start', key)
     res.json({ ok: true })
   } catch (e) {
     res.status(500).json({ error: e.message })

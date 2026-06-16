@@ -331,7 +331,7 @@
       dot.className = 'dot ' + (state === 'online' ? 'online' : state === 'offline' ? 'offline' : 'loading')
       text.textContent = label || state
 
-      btnStart.classList.toggle('hidden', state !== 'offline')
+      btnStart.classList.toggle('hidden', state !== 'offline' && state !== 'missing')
       btnStop.classList.toggle('hidden',  state !== 'online')
 
       if (state === 'online' || state === 'offline') feedback.textContent = ''

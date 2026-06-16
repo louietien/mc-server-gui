@@ -25,6 +25,10 @@ Single-file Node.js backend (`server.js`) + single-file frontend (`public/index.
 |---|---|---|
 | `MC_CONTAINER_NAME` | `mc-` | Prefix to find Survival container |
 | `SKYBLOCK_CONTAINER_NAME` | `skyblock-` | Prefix to find Skyblock container |
+| `MC_COOLIFY_UUID` | _(none)_ | Coolify service UUID for Survival (`ybm749g4du2qaudvl6dfwsim`) |
+| `SKYBLOCK_COOLIFY_UUID` | _(none)_ | Coolify service UUID for Skyblock (`ex2lov9altg9keg3u5hoz2b0`) |
+| `COOLIFY_API_URL` | `http://coolify:8000` | Coolify API base URL (accessible from within Docker network) |
+| `COOLIFY_API_TOKEN` | _(none)_ | Coolify API token — needed to start containers when removed by Coolify |
 | `PORT` | `3005` | Port the HTTP server listens on |
 
 ## Deployment (Coolify)
