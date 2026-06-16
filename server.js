@@ -109,6 +109,20 @@ async function coolifyAction(uuid, action) {
   }
 }
 
+async function getCoolifyRunning(uuid) {
+  if (!COOLIFY_API_TOKEN || !uuid) return null
+  try {
+    const r = await fetch(`${COOLIFY_API_URL}/api/v1/services/${uuid}`, {
+      headers: { Authorization: `Bearer ${COOLIFY_API_TOKEN}` },
+    })
+    if (!r.ok) return null
+    const d = await r.json()
+    return d.status === 'running'
+  } catch {
+    return null
+  }
+}
+
 async function stopServer(serverKey) {
   const { prefix, uuid } = SERVERS[serverKey]
   if (COOLIFY_API_TOKEN && uuid) {
@@ -256,17 +270,26 @@ app.get('/api/status', async (req, res) => {
   if (!prefix) return
   try {
     const result = await getContainer(prefix)
-    if (!result) return res.json({ running: false, status: 'not found', missing: true })
+    const { uuid } = SERVERS[key]
+
+    if (!result) {
+      const coolifyUp = await getCoolifyRunning(uuid)
+      const lastStopped = activityLog.find(e => e.server === key && e.action === 'stop')?.time || null
+      if (coolifyUp) return res.json({ running: true, status: 'starting', uptime: null, players: null, autoStopIn: null, version: null, lastStopped })
+      return res.json({ running: false, status: 'not found', missing: true })
+    }
 
     const { state, status, startedAt } = result
-    const running = state === 'running'
+    const dockerRunning = state === 'running' || state === 'restarting'
+    const running = dockerRunning || (await getCoolifyRunning(uuid) ?? false)
     let players = null
     let uptime = null
+    let ping = null
 
     if (running) {
       uptime = startedAt ? Math.round((Date.now() - new Date(startedAt)) / 1000) : null
       const pingHost = new URL(COOLIFY_API_URL).hostname
-      const ping = await mcPing(pingHost, PORTS[key])
+      ping = await mcPing(pingHost, PORTS[key])
       if (ping?.players) players = ping.players
     }
 
