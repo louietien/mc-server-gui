@@ -277,7 +277,9 @@ app.get('/api/status', async (req, res) => {
       cancelAutoStop(key)
     }
 
-    res.json({ running, status, uptime, players, autoStopIn: autoStopRemaining(key) })
+    const version = running && ping?.version?.name ? ping.version.name : null
+    const lastStopped = activityLog.find(e => e.server === key && e.action === 'stop')?.time || null
+    res.json({ running, status, uptime, players, autoStopIn: autoStopRemaining(key), version, lastStopped })
   } catch (e) {
     res.status(500).json({ error: e.message })
   }
@@ -306,6 +308,17 @@ app.post('/api/stop', async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message })
   }
+})
+
+app.post('/api/extend', requireAuth, (req, res) => {
+  const key = req.query.server || 'mc'
+  if (!SERVERS[key]) return res.status(400).json({ error: 'Unknown server' })
+  const entry = autoStopTimers.get(key)
+  if (!entry) return res.json({ ok: true, extended: false })
+  clearTimeout(entry.timer)
+  autoStopTimers.delete(key)
+  scheduleAutoStop(key)
+  res.json({ ok: true, extended: true })
 })
 
 const PORT = process.env.PORT || 3005

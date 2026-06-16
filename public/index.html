@@ -155,11 +155,50 @@
       min-height: 18px;
     }
 
-    .autostop {
+    .autostop-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
       margin-top: 8px;
+      min-height: 20px;
+    }
+
+    .autostop {
       font-size: 12px;
       color: #f59e0b;
-      min-height: 16px;
+    }
+
+    .btn-extend {
+      flex: none;
+      padding: 2px 9px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(245, 158, 11, 0.12);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-extend:hover { background: rgba(245, 158, 11, 0.24); }
+
+    .players-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: center;
+      margin-bottom: 14px;
+      min-height: 0;
+    }
+
+    .player-pill {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: #94a3b8;
     }
 
     .logout {
@@ -256,7 +295,11 @@
           <button class="btn-stop  hidden" id="stop-mc"  onclick="action('mc','stop')">Stop</button>
         </div>
         <div class="feedback" id="feedback-mc"></div>
-        <div class="autostop" id="autostop-mc"></div>
+        <div class="players-list" id="players-mc"></div>
+        <div class="autostop-row">
+          <div class="autostop" id="autostop-mc"></div>
+          <button class="btn-extend hidden" id="extend-mc" onclick="extend('mc')">+30m</button>
+        </div>
       </div>
 
       <div class="card" id="card-skyblock">
@@ -272,7 +315,11 @@
           <button class="btn-stop  hidden" id="stop-skyblock"  onclick="action('skyblock','stop')">Stop</button>
         </div>
         <div class="feedback" id="feedback-skyblock"></div>
-        <div class="autostop" id="autostop-skyblock"></div>
+        <div class="players-list" id="players-skyblock"></div>
+        <div class="autostop-row">
+          <div class="autostop" id="autostop-skyblock"></div>
+          <button class="btn-extend hidden" id="extend-skyblock" onclick="extend('skyblock')">+30m</button>
+        </div>
       </div>
 
       <a href="/logout" class="logout">Sign out</a>
@@ -288,6 +335,7 @@
 
   <script>
     const SERVER_LABELS = { mc: 'Survival', skyblock: 'Skyblock' }
+    const serverState = {}
 
     function formatUptime(s) {
       if (!s) return null
@@ -305,24 +353,38 @@
       return `Auto-stop in <1m`
     }
 
+    function formatLastStopped(ts) {
+      if (!ts) return null
+      const diff = Math.floor((Date.now() - new Date(ts)) / 1000)
+      if (diff < 60)  return 'Stopped just now'
+      if (diff < 3600) return `Stopped ${Math.floor(diff / 60)}m ago`
+      if (diff < 86400) return `Stopped ${Math.floor(diff / 3600)}h ago`
+      const d = new Date(ts)
+      return `Stopped ${d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`
+    }
+
     async function poll(server) {
       try {
         const res = await fetch('/api/status?server=' + server)
         const data = await res.json()
-        setState(server, data.running ? 'online' : 'offline', data.running ? 'Up' : 'Down', data.uptime, data.players, data.autoStopIn)
+        setState(server, data.running ? 'online' : 'offline', data.running ? 'Up' : 'Down', data.uptime, data.players, data.autoStopIn, data.version, data.lastStopped)
       } catch {
-        setState(server, 'error', 'Could not reach server', null, null, null)
+        setState(server, 'error', 'Could not reach server', null, null, null, null, null)
       }
     }
 
-    function setState(server, state, label, uptime, players, autoStopIn) {
-      const dot      = document.getElementById('dot-' + server)
-      const text     = document.getElementById('status-' + server)
-      const btnStart = document.getElementById('start-' + server)
-      const btnStop  = document.getElementById('stop-' + server)
-      const feedback = document.getElementById('feedback-' + server)
-      const meta     = document.getElementById('meta-' + server)
-      const autostop = document.getElementById('autostop-' + server)
+    function setState(server, state, label, uptime, players, autoStopIn, version, lastStopped) {
+      const dot         = document.getElementById('dot-' + server)
+      const text        = document.getElementById('status-' + server)
+      const btnStart    = document.getElementById('start-' + server)
+      const btnStop     = document.getElementById('stop-' + server)
+      const feedback    = document.getElementById('feedback-' + server)
+      const meta        = document.getElementById('meta-' + server)
+      const autostop    = document.getElementById('autostop-' + server)
+      const extendBtn   = document.getElementById('extend-' + server)
+      const playersList = document.getElementById('players-' + server)
+
+      serverState[server] = { players }
 
       dot.className = 'dot ' + (state === 'online' ? 'online' : state === 'offline' ? 'offline' : 'loading')
       text.textContent = label || state
@@ -337,11 +399,24 @@
         const up = formatUptime(uptime)
         if (up) parts.push(`<span>${up}</span>`)
         if (players !== null) parts.push(`<span class="sep">·</span><span class="players">${players.online} / ${players.max} online</span>`)
+        if (version) parts.push(`<span class="sep">·</span><span>${version}</span>`)
         meta.innerHTML = parts.join('')
+
+        const sample = players?.sample
+        if (sample && sample.length > 0) {
+          playersList.innerHTML = sample.map(p => `<span class="player-pill">${p.name}</span>`).join('')
+        } else {
+          playersList.innerHTML = ''
+        }
+
         autostop.textContent = formatAutoStop(autoStopIn)
+        extendBtn.classList.toggle('hidden', autoStopIn === null)
       } else {
-        meta.innerHTML = ''
+        const ls = state === 'offline' ? formatLastStopped(lastStopped) : null
+        meta.innerHTML = ls ? `<span>${ls}</span>` : ''
+        playersList.innerHTML = ''
         autostop.textContent = ''
+        extendBtn.classList.add('hidden')
       }
     }
 
@@ -352,12 +427,12 @@
           const res = await fetch('/api/status?server=' + server)
           const data = await res.json()
           if (data.running) {
-            setState(server, 'online', 'Up', data.uptime, data.players, data.autoStopIn)
+            setState(server, 'online', 'Up', data.uptime, data.players, data.autoStopIn, data.version, data.lastStopped)
             return
           }
         } catch {}
         if (Date.now() < deadline) {
-          setState(server, 'loading', 'Starting…', null, null, null)
+          setState(server, 'loading', 'Starting…', null, null, null, null, null)
           setTimeout(check, interval)
         } else {
           poll(server)
@@ -367,11 +442,16 @@
     }
 
     async function action(server, cmd) {
-      const btnId   = (cmd === 'start' ? 'start-' : 'stop-') + server
+      if (cmd === 'stop') {
+        const online = serverState[server]?.players?.online || 0
+        if (online > 0 && !confirm(`${online} player${online > 1 ? 's' : ''} online — stop server anyway?`)) return
+      }
+
+      const btnId    = (cmd === 'start' ? 'start-' : 'stop-') + server
       const btn      = document.getElementById(btnId)
       const feedback = document.getElementById('feedback-' + server)
       btn.disabled = true
-      setState(server, 'loading', cmd === 'start' ? 'Starting…' : 'Stopping…', null, null, null)
+      setState(server, 'loading', cmd === 'start' ? 'Starting…' : 'Stopping…', null, null, null, null, null)
       feedback.textContent = ''
 
       try {
@@ -387,6 +467,17 @@
         pollLog()
       } catch (e) {
         feedback.textContent = 'Error: ' + e.message
+        poll(server)
+      } finally {
+        btn.disabled = false
+      }
+    }
+
+    async function extend(server) {
+      const btn = document.getElementById('extend-' + server)
+      btn.disabled = true
+      try {
+        await fetch('/api/extend?server=' + server, { method: 'POST' })
         poll(server)
       } finally {
         btn.disabled = false
