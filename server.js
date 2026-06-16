@@ -28,7 +28,7 @@ const SERVERS = {
   skyblock: { prefix: process.env.SKYBLOCK_CONTAINER_NAME || 'skyblock-', uuid: process.env.SKYBLOCK_COOLIFY_UUID || '' },
 }
 
-const COOLIFY_API_URL   = process.env.COOLIFY_API_URL   || 'http://coolify:8080'
+const COOLIFY_API_URL   = process.env.COOLIFY_API_URL   || 'http://10.0.1.1:8000'
 const COOLIFY_API_TOKEN = process.env.COOLIFY_API_TOKEN || ''
 const PORTS = {
   mc:       parseInt(process.env.MC_PORT)       || 25565,
