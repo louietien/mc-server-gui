@@ -207,16 +207,13 @@ async function getContainer(prefix) {
   if (!info) return null
   const container = docker.getContainer(info.Id)
   let startedAt = null
-  let containerIp = null
   if (info.State === 'running') {
     try {
       const details = await container.inspect()
       startedAt = details.State.StartedAt
-      const networks = details.NetworkSettings.Networks
-      containerIp = Object.values(networks)[0]?.IPAddress || null
     } catch {}
   }
-  return { container, state: info.State, status: info.Status, startedAt, containerIp }
+  return { container, state: info.State, status: info.Status, startedAt }
 }
 
 function resolvePrefix(req, res) {
@@ -261,17 +258,16 @@ app.get('/api/status', async (req, res) => {
     const result = await getContainer(prefix)
     if (!result) return res.json({ running: false, status: 'not found', missing: true })
 
-    const { state, status, startedAt, containerIp } = result
+    const { state, status, startedAt } = result
     const running = state === 'running'
     let players = null
     let uptime = null
 
     if (running) {
       uptime = startedAt ? Math.round((Date.now() - new Date(startedAt)) / 1000) : null
-      if (containerIp) {
-        const ping = await mcPing(containerIp, PORTS[key])
-        if (ping?.players) players = ping.players
-      }
+      const pingHost = new URL(COOLIFY_API_URL).hostname
+      const ping = await mcPing(pingHost, PORTS[key])
+      if (ping?.players) players = ping.players
     }
 
     if (running && players !== null) {
