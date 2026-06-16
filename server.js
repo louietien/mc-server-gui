@@ -96,6 +96,40 @@ function mcPing(host, port, timeout = 2000) {
   })
 }
 
+// --- Coolify API helpers ---
+
+async function coolifyAction(uuid, action) {
+  const r = await fetch(`${COOLIFY_API_URL}/api/v1/services/${uuid}/${action}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${COOLIFY_API_TOKEN}` },
+  })
+  if (!r.ok) {
+    const d = await r.json().catch(() => ({}))
+    throw new Error(d.message || `Coolify API error ${r.status}`)
+  }
+}
+
+async function stopServer(serverKey) {
+  const { prefix, uuid } = SERVERS[serverKey]
+  if (COOLIFY_API_TOKEN && uuid) {
+    await coolifyAction(uuid, 'stop')
+  } else {
+    const result = await getContainer(prefix)
+    if (result?.state === 'running') await result.container.stop()
+  }
+}
+
+async function startServer(serverKey) {
+  const { prefix, uuid } = SERVERS[serverKey]
+  if (COOLIFY_API_TOKEN && uuid) {
+    await coolifyAction(uuid, 'start')
+  } else {
+    const result = await getContainer(prefix)
+    if (!result) throw new Error('Container not found')
+    if (result.state !== 'running') await result.container.start()
+  }
+}
+
 // --- Auto-stop ---
 
 const autoStopTimers = new Map()
@@ -106,12 +140,9 @@ function scheduleAutoStop(serverKey) {
   const timer = setTimeout(async () => {
     autoStopTimers.delete(serverKey)
     try {
-      const result = await getContainer(SERVERS[serverKey].prefix)
-      if (result?.state === 'running') {
-        await result.container.stop()
-        addLogEntry('stop', serverKey, 'system')
-        console.log(`Auto-stopped ${serverKey}`)
-      }
+      await stopServer(serverKey)
+      addLogEntry('stop', serverKey, 'system')
+      console.log(`Auto-stopped ${serverKey}`)
     } catch (e) {
       console.error(`Auto-stop failed for ${serverKey}:`, e.message)
     }
@@ -258,26 +289,9 @@ app.get('/api/status', async (req, res) => {
 
 app.post('/api/start', async (req, res) => {
   const key = req.query.server || 'mc'
-  const prefix = resolvePrefix(req, res)
-  if (!prefix) return
+  if (!SERVERS[key]) return res.status(400).json({ error: 'Unknown server' })
   try {
-    const result = await getContainer(prefix)
-    if (!result) {
-      const { uuid } = SERVERS[key]
-      if (!uuid || !COOLIFY_API_TOKEN) return res.json({ ok: false, error: 'Container not found' })
-      const r = await fetch(`${COOLIFY_API_URL}/api/v1/services/${uuid}/start`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${COOLIFY_API_TOKEN}` },
-      })
-      if (!r.ok) {
-        const d = await r.json().catch(() => ({}))
-        throw new Error(d.message || `Coolify API error ${r.status}`)
-      }
-      addLog(req, 'start', key)
-      return res.json({ ok: true })
-    }
-    const { container, state } = result
-    if (state !== 'running') await container.start()
+    await startServer(key)
     addLog(req, 'start', key)
     res.json({ ok: true })
   } catch (e) {
@@ -286,15 +300,12 @@ app.post('/api/start', async (req, res) => {
 })
 
 app.post('/api/stop', async (req, res) => {
-  const prefix = resolvePrefix(req, res)
-  if (!prefix) return
+  const key = req.query.server || 'mc'
+  if (!SERVERS[key]) return res.status(400).json({ error: 'Unknown server' })
   try {
-    const result = await getContainer(prefix)
-    if (!result) return res.json({ ok: false, error: 'Container not found' })
-    const { container, state } = result
-    if (state === 'running') await container.stop()
-    cancelAutoStop(req.query.server || 'mc')
-    addLog(req, 'stop', req.query.server || 'mc')
+    await stopServer(key)
+    cancelAutoStop(key)
+    addLog(req, 'stop', key)
     res.json({ ok: true })
   } catch (e) {
     res.status(500).json({ error: e.message })
