@@ -26,6 +26,7 @@ const docker = new Dockerode({ socketPath: '/var/run/docker.sock' })
 const SERVERS = {
   mc:       { prefix: process.env.MC_CONTAINER_NAME       || 'mc-',       uuid: process.env.MC_COOLIFY_UUID       || '' },
   skyblock: { prefix: process.env.SKYBLOCK_CONTAINER_NAME || 'skyblock-', uuid: process.env.SKYBLOCK_COOLIFY_UUID || '' },
+  jose:     { prefix: process.env.JOSE_CONTAINER_NAME     || 'mc-jidfnygkf4yjqrqksmr2rixi', uuid: process.env.JOSE_COOLIFY_UUID || 'jidfnygkf4yjqrqksmr2rixi' },
 }
 
 const COOLIFY_API_URL   = process.env.COOLIFY_API_URL   || 'http://10.0.1.1:8000'
@@ -33,6 +34,7 @@ const COOLIFY_API_TOKEN = process.env.COOLIFY_API_TOKEN || ''
 const PORTS = {
   mc:       parseInt(process.env.MC_PORT)       || 25565,
   skyblock: parseInt(process.env.SKYBLOCK_PORT) || 25566,
+  jose:     parseInt(process.env.JOSE_PORT)     || 25569,
 }
 const AUTO_STOP_MS = (parseInt(process.env.AUTO_STOP_MINUTES) || 30) * 60 * 1000
 

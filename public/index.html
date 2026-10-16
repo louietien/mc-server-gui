@@ -322,6 +322,26 @@
         </div>
       </div>
 
+      <div class="card" id="card-jose">
+        <img class="card-icon" src="/mc-logo.svg" alt="Jose" />
+        <div class="card-title">Jose :25569</div>
+        <div class="status-row">
+          <div class="dot loading" id="dot-jose"></div>
+          <span class="status-text" id="status-jose">Checking…</span>
+        </div>
+        <div class="card-meta" id="meta-jose"></div>
+        <div class="btn-row">
+          <button class="btn-start hidden" id="start-jose" onclick="action('jose','start')">Start</button>
+          <button class="btn-stop  hidden" id="stop-jose"  onclick="action('jose','stop')">Stop</button>
+        </div>
+        <div class="feedback" id="feedback-jose"></div>
+        <div class="players-list" id="players-jose"></div>
+        <div class="autostop-row">
+          <div class="autostop" id="autostop-jose"></div>
+          <button class="btn-extend hidden" id="extend-jose" onclick="extend('jose')">+30m</button>
+        </div>
+      </div>
+
       <a href="/logout" class="logout">Sign out</a>
     </div>
   </div>
@@ -334,7 +354,7 @@
   </div>
 
   <script>
-    const SERVER_LABELS = { mc: 'Survival', skyblock: 'Skyblock' }
+    const SERVER_LABELS = { mc: 'Survival', skyblock: 'Skyblock', jose: 'Jose' }
     const serverState = {}
     const polling = {}
 
@@ -513,7 +533,7 @@
       } catch {}
     }
 
-    const SERVERS = ['mc', 'skyblock']
+    const SERVERS = ['mc', 'skyblock', 'jose']
     SERVERS.forEach(s => {
       poll(s)
       setInterval(() => { if (!polling[s]) poll(s) }, 8000)
