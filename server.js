@@ -180,6 +180,24 @@ function autoStopRemaining(serverKey) {
 // --- Express setup ---
 
 app.set('trust proxy', true)
+
+// Unauthenticated health check (registered before session/auth) for Coolify/uptime probes
+app.get('/health', async (req, res) => {
+  let dockerOk = false
+  try {
+    await Promise.race([
+      docker.ping(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
+    ])
+    dockerOk = true
+  } catch {}
+  res.status(dockerOk ? 200 : 503).json({
+    status: dockerOk ? 'ok' : 'degraded',
+    docker: dockerOk,
+    uptime: Math.round(process.uptime()),
+  })
+})
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(session({
