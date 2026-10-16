@@ -1,393 +1,913 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b100f" />
   <title>MC Server</title>
   <link rel="icon" type="image/svg+xml" href="mc-logo.svg" />
+  <script src="/theme.js"></script>
   <style>
+    :root {
+      color-scheme: dark;
+
+      --ink:        #e9f0ea;
+      --ink-soft:   #aab9b0;
+      --ink-faint:  #71827a;
+
+      --panel:       rgba(11, 16, 15, 0.74);
+      --panel-solid: #0f1514;
+      --inset:       rgba(255, 255, 255, 0.04);
+      --line:        rgba(255, 255, 255, 0.09);
+      --line-strong: rgba(255, 255, 255, 0.16);
+
+      --grass:      #62c13e;
+      --grass-deep: #3f8f26;
+      --redstone:   #ec5b4e;
+      --gold:       #f3b53f;
+      --diamond:    #52d4c8;
+
+      /* Text-safe variants of the accents (darker in light theme) */
+      --grass-text:   #62c13e;
+      --red-text:     #ef6b5f;
+      --gold-text:    #f3b53f;
+      --diamond-text: #52d4c8;
+      --focus:        #52d4c8;
+
+      --stop-text:  #ffb4ab;
+      --stop-text-hover: #ffd0ca;
+      --stop-bg:    rgba(236, 91, 78, 0.1);
+      --stop-bg-hover: rgba(236, 91, 78, 0.22);
+      --stop-ring:  rgba(236, 91, 78, 0.55);
+
+      --edge:        rgba(0, 0, 0, 0.4);
+      --edge-soft:   rgba(0, 0, 0, 0.3);
+      --text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 50px rgba(0, 0, 0, 0.45);
+
+      --slot-bg:    rgba(0, 0, 0, 0.38);
+      --slot-dark:  rgba(0, 0, 0, 0.45);
+      --slot-dark2: rgba(0, 0, 0, 0.3);
+      --slot-light: rgba(255, 255, 255, 0.07);
+      --slot-light2:rgba(255, 255, 255, 0.05);
+
+      --track:      rgba(255, 255, 255, 0.14);
+      --scrim:      rgba(3, 6, 6, 0.6);
+
+      --bg-filter:  blur(8px) brightness(0.68) saturate(1.15);
+      --bg-shade:
+        radial-gradient(120% 80% at 50% 0%, transparent 40%, rgba(5, 8, 8, 0.45) 100%),
+        linear-gradient(to bottom, rgba(5, 8, 8, 0.15), rgba(5, 8, 8, 0.5));
+
+      --state:      var(--ink-faint);
+      --state-text: var(--ink-faint);
+
+      --font:       system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      --mono:       ui-monospace, 'SF Mono', 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+
+      --ink:        #14201a;
+      --ink-soft:   #44554b;
+      --ink-faint:  #6a7b71;
+
+      --panel:       rgba(255, 255, 255, 0.76);
+      --panel-solid: #f8fbf7;
+      --inset:       rgba(20, 40, 30, 0.05);
+      --line:        rgba(20, 40, 30, 0.13);
+      --line-strong: rgba(20, 40, 30, 0.24);
+
+      --grass-text:   #2c7516;
+      --red-text:     #b3261e;
+      --gold-text:    #7d5200;
+      --diamond-text: #0b7a70;
+      --focus:        #0b7a70;
+
+      --stop-text:  #a8231a;
+      --stop-text-hover: #8a1a12;
+      --stop-bg:    rgba(236, 91, 78, 0.08);
+      --stop-bg-hover: rgba(236, 91, 78, 0.18);
+      --stop-ring:  rgba(200, 60, 50, 0.6);
+
+      --edge:        rgba(20, 40, 30, 0.28);
+      --edge-soft:   rgba(20, 40, 30, 0.16);
+      --text-shadow: 0 1px 8px rgba(255, 255, 255, 0.7);
+      --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 14px 38px rgba(30, 55, 40, 0.2);
+
+      --slot-bg:    rgba(20, 40, 30, 0.1);
+      --slot-dark:  rgba(20, 40, 30, 0.2);
+      --slot-dark2: rgba(20, 40, 30, 0.12);
+      --slot-light: rgba(255, 255, 255, 0.8);
+      --slot-light2:rgba(255, 255, 255, 0.6);
+
+      --track:      rgba(20, 40, 30, 0.14);
+      --scrim:      rgba(220, 232, 222, 0.6);
+
+      --bg-filter:  blur(8px) brightness(1.08) saturate(1.05);
+      --bg-shade:
+        linear-gradient(to bottom, rgba(238, 245, 238, 0.42), rgba(238, 245, 238, 0.72));
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: #e2e8f0;
+      font-family: var(--font);
+      color: var(--ink);
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       position: relative;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
+    /* ---------- Backdrop ---------- */
     .bg {
       position: fixed;
       inset: -20px;
       background: url('bg.jpg') center/cover no-repeat;
-      filter: blur(12px) brightness(0.45);
+      filter: var(--bg-filter);
       z-index: 0;
     }
+    .bg-shade {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: var(--bg-shade);
+      pointer-events: none;
+    }
 
-    .layout {
+    /* ---------- Shell ---------- */
+    .shell {
       position: relative;
       z-index: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      width: 100%;
-      padding: 24px 16px;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px 20px 56px;
     }
 
-    .page {
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 6px 0 30px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand img {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+    }
+    .brand-name {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      text-shadow: var(--text-shadow);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logout, .theme-toggle {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-decoration: none;
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .logout:hover, .theme-toggle:hover { color: var(--ink); border-color: var(--line-strong); }
+
+    .theme-toggle {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 35px;
+      padding: 0;
+    }
+    .theme-toggle svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .theme-toggle .i-sun  { display: none; }
+    :root[data-theme="dark"]  .theme-toggle .i-sun  { display: block; }
+    :root[data-theme="dark"]  .theme-toggle .i-moon { display: none; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--ink-soft);
+      margin-bottom: 14px;
+      text-shadow: var(--text-shadow);
+    }
+
+    /* ---------- Server rows ---------- */
+    .servers {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      width: 100%;
-      max-width: 440px;
-    }
-
-    .logo {
-      width: 140px;
-      height: auto;
-      display: block;
-      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+      gap: 14px;
     }
 
     .card {
-      background: rgba(15, 17, 23, 0.72);
+      --state: var(--ink-faint);
+      --state-text: var(--ink-faint);
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "slot id   act"
+        "slot stat act"
+        "foot foot foot";
+      column-gap: 18px;
+      row-gap: 6px;
+      align-items: center;
+      padding: 18px 20px 18px 18px;
+      background: var(--panel);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px;
-      padding: 28px 32px;
-      width: 100%;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      transition: border-color 0.3s;
+    }
+    /* State rail */
+    .card::after {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: var(--state);
+      transition: background 0.3s;
+    }
+    .card[data-state="online"]  { --state: var(--grass);    --state-text: var(--grass-text); }
+    .card[data-state="offline"] { --state: var(--redstone); --state-text: var(--red-text); }
+    .card[data-state="loading"] { --state: var(--gold);     --state-text: var(--gold-text); }
+    .card[data-state="error"]   { --state: var(--gold);     --state-text: var(--gold-text); }
+
+    /* Progress sweep while starting / stopping */
+    .card::before {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      background-size: 40% 100%;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .card[data-state="loading"]::before {
+      opacity: 1;
+      animation: sweep 1.4s ease-in-out infinite;
+    }
+    @keyframes sweep {
+      from { background-position: -40% 0; }
+      to   { background-position: 140% 0; }
     }
 
+    /* Inventory-slot icon frame */
+    .slot {
+      grid-area: slot;
+      width: 72px;
+      height: 72px;
+      display: grid;
+      place-items: center;
+      background: var(--slot-bg);
+      border-radius: 6px;
+      box-shadow:
+        inset 0 3px 0 var(--slot-dark),
+        inset 3px 0 0 var(--slot-dark2),
+        inset 0 -2px 0 var(--slot-light),
+        inset -2px 0 0 var(--slot-light2);
+    }
     .card-icon {
-      width: 64px;
-      height: 64px;
+      width: 46px;
+      height: 46px;
       object-fit: contain;
-      margin-bottom: 12px;
       image-rendering: pixelated;
+      filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45));
+      transition: filter 0.3s, opacity 0.3s;
+    }
+    .card[data-state="offline"] .card-icon,
+    .card[data-state="error"]   .card-icon { filter: grayscale(0.85) brightness(0.8); opacity: 0.75; }
+
+    .id {
+      grid-area: id;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      min-width: 0;
+      align-self: end;
     }
 
     .card-title {
-      font-size: 14px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #64748b;
-      margin-bottom: 16px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.005em;
+      line-height: 1.2;
     }
 
-    .title-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 16px;
+    .addr {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-soft);
+      background: var(--inset);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 2px 7px;
+      white-space: nowrap;
     }
-    .title-row .card-title { margin-bottom: 0; }
 
     .btn-copy {
-      flex: none;
-      padding: 2px 9px;
+      padding: 3px 10px;
+      font-family: inherit;
       font-size: 11px;
-      font-weight: 600;
-      background: rgba(100, 116, 139, 0.12);
-      color: #94a3b8;
-      border: 1px solid rgba(100, 116, 139, 0.3);
-      border-radius: 5px;
-      transition: background 0.2s, color 0.2s;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--ink-soft);
+      background: transparent;
+      border: 1px solid var(--line-strong);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
     }
-    .btn-copy:hover { background: rgba(100, 116, 139, 0.24); }
-    .btn-copy.copied { color: #22c55e; border-color: rgba(34, 197, 94, 0.4); }
+    .btn-copy:hover { color: var(--diamond-text); border-color: var(--diamond-text); background: rgba(82, 212, 200, 0.1); }
+    .btn-copy.copied { color: var(--grass-text); border-color: var(--grass-text); background: rgba(98, 193, 62, 0.12); }
+
+    /* Status + meta */
+    .stat {
+      grid-area: stat;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      min-width: 0;
+      align-self: start;
+    }
 
     .status-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 8px;
+      gap: 8px;
     }
 
     .dot {
       width: 10px;
       height: 10px;
-      border-radius: 50%;
-      background: #64748b;
-      transition: background 0.3s;
+      border-radius: 2px;
+      background: var(--ink-faint);
       flex-shrink: 0;
+      transition: background 0.3s, box-shadow 0.3s;
     }
-    .dot.online  { background: #22c55e; box-shadow: 0 0 8px #22c55e88; }
-    .dot.offline { background: #ef4444; }
-    .dot.loading { background: #f59e0b; }
+    .dot.online  { background: var(--grass);    box-shadow: 0 0 0 3px rgba(98, 193, 62, 0.2), 0 0 10px rgba(98, 193, 62, 0.55); }
+    .dot.offline { background: var(--redstone); box-shadow: 0 0 0 3px rgba(236, 91, 78, 0.16); }
+    .dot.loading { background: var(--gold);     box-shadow: 0 0 0 3px rgba(243, 181, 63, 0.2); animation: blink 1s steps(2, jump-none) infinite; }
+    .card[data-state="error"] .dot { animation: none; }
+    @keyframes blink { 50% { opacity: 0.35; } }
 
     .status-text {
       font-size: 14px;
-      color: #94a3b8;
+      font-weight: 700;
+      color: var(--state-text);
     }
 
     .card-meta {
-      font-size: 12px;
-      color: #475569;
-      margin-bottom: 16px;
-      min-height: 16px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .card-meta .players { color: #64748b; }
-    .card-meta .sep     { color: #2d3748; }
-
-    .btn-row {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    button {
-      flex: 1;
-      padding: 11px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-    button:active { transform: scale(0.98); }
-    button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-    .btn-start { background: #22c55e; color: #fff; }
-    .btn-stop  { background: #ef4444; color: #fff; }
-    .btn-start:hover:not(:disabled) { opacity: 0.88; }
-    .btn-stop:hover:not(:disabled)  { opacity: 0.88; }
-
-    .hidden { display: none; }
-
-    .feedback {
-      margin-top: 12px;
+      flex-wrap: wrap;
+      gap: 6px;
       font-size: 12px;
-      color: #64748b;
-      min-height: 18px;
+      color: var(--ink-soft);
+    }
+    .card-meta:empty { display: none; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--inset);
+      border: 1px solid var(--line);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .chip.players { color: var(--ink); }
+
+    /* Player capacity bar */
+    .cap {
+      position: relative;
+      width: 44px;
+      height: 6px;
+      margin-left: 8px;
+      border-radius: 1px;
+      background: var(--track);
+      overflow: hidden;
+    }
+    .cap > i {
+      display: block;
+      height: 100%;
+      background: var(--grass);
+      transition: width 0.4s;
+    }
+    .cap.full > i { background: var(--gold); }
+
+    /* Actions */
+    .btn-row {
+      grid-area: act;
+      display: flex;
+      min-width: 124px;
+    }
+
+    .btn-row button {
+      flex: 1;
+      padding: 12px 18px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: filter 0.15s, transform 0.08s;
+    }
+    .btn-row button:active:not(:disabled) { transform: translateY(2px); }
+    .btn-row button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-start {
+      color: #0b1a07;
+      background: var(--grass);
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -4px 0 var(--grass-deep),
+        0 4px 0 var(--edge);
+    }
+    .btn-start:hover:not(:disabled) { filter: brightness(1.08); }
+    .btn-start:active:not(:disabled) { box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -4px 0 var(--grass-deep), 0 2px 0 var(--edge); }
+
+    .btn-stop {
+      color: var(--stop-text);
+      background: var(--stop-bg);
+      box-shadow:
+        inset 0 0 0 1.5px var(--stop-ring),
+        0 4px 0 var(--edge-soft);
+    }
+    .btn-stop:hover:not(:disabled) { background: var(--stop-bg-hover); color: var(--stop-text-hover); }
+
+    .hidden { display: none !important; }
+
+    /* Footer strip: players, auto-stop, feedback */
+    .card-foot {
+      grid-area: foot;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 16px;
+      margin-top: 8px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--line-strong);
+    }
+    .card-foot:not(:has(.players-list:not(:empty), .feedback:not(:empty), .autostop:not(:empty))) { display: none; }
+
+    .players-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .players-list:empty { display: none; }
+
+    .player-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 3px 10px 3px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--inset);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+    /* Skin head; falls back to a pixel block if the image can't load */
+    .head {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      border-radius: 2px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #e0a981 50%, #5b3d22 50%);
+    }
+    .head img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
     }
 
     .autostop-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 8px;
-      min-height: 20px;
+      gap: 10px;
+      margin-left: auto;
     }
+    .autostop-row:has(.autostop:empty) { display: none; }
 
     .autostop {
       font-size: 12px;
-      color: #f59e0b;
+      font-weight: 600;
+      color: var(--gold-text);
+      font-variant-numeric: tabular-nums;
     }
+    .autostop::before { content: '⏱ '; }
 
     .btn-extend {
-      flex: none;
-      padding: 2px 9px;
+      padding: 3px 10px;
+      font-family: inherit;
       font-size: 11px;
-      font-weight: 600;
-      background: rgba(245, 158, 11, 0.12);
-      color: #f59e0b;
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn-extend:hover { background: rgba(245, 158, 11, 0.24); }
-
-    .players-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      justify-content: center;
-      margin-bottom: 14px;
-      min-height: 0;
-    }
-
-    .player-pill {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.09);
+      font-weight: 800;
+      color: var(--gold-text);
+      background: rgba(243, 181, 63, 0.12);
+      border: 1px solid var(--gold-text);
       border-radius: 4px;
-      padding: 2px 8px;
-      font-size: 11px;
-      color: #94a3b8;
+      cursor: pointer;
+      transition: background 0.15s;
     }
+    .btn-extend:hover:not(:disabled) { background: rgba(243, 181, 63, 0.26); }
+    .btn-extend:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    .logout {
-      display: block;
-      font-size: 13px;
-      color: #475569;
-      text-decoration: none;
+    .feedback {
+      width: 100%;
+      font-size: 12px;
+      color: var(--ink-soft);
+      order: 3;
     }
-    .logout:hover { color: #94a3b8; }
+    .feedback:empty { display: none; }
 
-    /* Log panel */
+    /* ---------- Activity ledger ---------- */
     .log-panel {
-      position: fixed;
-      right: 24px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(15, 17, 23, 0.72);
+      position: sticky;
+      top: 20px;
+      padding: 18px 18px 8px;
+      background: var(--panel);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px;
-      padding: 20px;
-      width: 240px;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-      z-index: 2;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
     }
-
-    .log-panel-title {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #475569;
-      margin-bottom: 14px;
-    }
+    .log-panel .section-title { text-shadow: none; margin-bottom: 12px; }
 
     .log-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      max-height: min(560px, calc(100vh - 140px));
       overflow-y: auto;
-      max-height: 520px;
+      margin: 0 -6px;
+      padding: 0 6px 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--line-strong) transparent;
     }
 
     .log-entry {
-      border-left: 2px solid #1e293b;
-      padding-left: 10px;
+      --c: var(--ink-faint);
+      --ct: var(--ink-faint);
+      position: relative;
+      padding: 9px 0 9px 22px;
+      border-bottom: 1px dashed var(--line-strong);
     }
-    .log-entry.start { border-color: #22c55e; }
-    .log-entry.stop  { border-color: #ef4444; }
+    .log-entry:last-child { border-bottom: none; }
+    .log-entry.start { --c: var(--grass);    --ct: var(--grass-text); }
+    .log-entry.stop  { --c: var(--redstone); --ct: var(--red-text); }
+    .log-entry::before {
+      content: '';
+      position: absolute;
+      left: 2px;
+      top: 15px;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      background: var(--c);
+    }
 
     .log-action {
-      font-size: 12px;
-      font-weight: 600;
-      color: #cbd5e1;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ct);
     }
-    .log-entry.start .log-action { color: #4ade80; }
-    .log-entry.stop  .log-action { color: #f87171; }
-
     .log-meta {
-      font-size: 11px;
-      color: #475569;
       margin-top: 2px;
+      font-size: 11px;
+      color: var(--ink-faint);
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
     }
 
     .log-empty {
-      font-size: 12px;
-      color: #334155;
+      font-size: 13px;
+      color: var(--ink-faint);
       text-align: center;
-      padding: 20px 0;
+      padding: 24px 0 28px;
     }
 
-    @media (max-width: 760px) {
-      .log-panel { display: none; }
+    /* ---------- Confirm dialog ---------- */
+    .dialog {
+      margin: auto;
+      width: min(92vw, 400px);
+      padding: 22px 22px 20px;
+      color: var(--ink);
+      background: var(--panel-solid);
+      border: 1px solid var(--line-strong);
+      border-left: 4px solid var(--redstone);
+      border-radius: 10px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+    }
+    .dialog::backdrop { background: var(--scrim); backdrop-filter: blur(3px); }
+    .dialog[open] { animation: pop 0.14s ease-out; }
+    @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(0.98); } }
+
+    .dialog h2 { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+    .dialog p  { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .dialog-actions button {
+      padding: 10px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: filter 0.15s, background 0.15s;
+    }
+    .btn-ghost {
+      color: var(--ink);
+      background: transparent;
+      border: 1px solid var(--line-strong);
+    }
+    .btn-ghost:hover { background: var(--inset); }
+    .btn-danger {
+      color: #fff;
+      background: #d94a3d;
+      border: none;
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.25), inset 0 -3px 0 rgba(0, 0, 0, 0.25);
+    }
+    .btn-danger:hover { filter: brightness(1.1); }
+
+    /* ---------- Toasts ---------- */
+    .toasts {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: min(360px, calc(100vw - 24px));
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 10px 12px 14px;
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--ink);
+      background: var(--panel-solid);
+      border: 1px solid var(--line-strong);
+      border-left: 4px solid var(--redstone);
+      border-radius: 8px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+      animation: toast-in 0.2s ease-out;
+    }
+    .toast.leaving { opacity: 0; transform: translateY(6px); transition: opacity 0.2s, transform 0.2s; }
+    .toast-msg { flex: 1; overflow-wrap: anywhere; }
+    .toast-close {
+      flex: none;
+      width: 22px;
+      height: 22px;
+      font-size: 16px;
+      line-height: 1;
+      color: var(--ink-soft);
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .toast-close:hover { color: var(--ink); background: var(--inset); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } }
+
+    /* ---------- Focus ---------- */
+    button:focus-visible, a:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+      .log-panel { position: static; }
+      .log-list { max-height: 420px; }
+    }
+
+    @media (max-width: 600px) {
+      .shell { padding: 12px 12px 40px; }
+      .topbar { padding-bottom: 22px; }
+      .card {
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+          "slot id"
+          "slot stat"
+          "act  act"
+          "foot foot";
+        padding: 16px 14px 16px 16px;
+        column-gap: 14px;
+      }
+      .slot { width: 60px; height: 60px; }
+      .card-icon { width: 38px; height: 38px; }
+      .card-title { font-size: 18px; }
+      .btn-row { margin-top: 10px; }
+      .btn-row:has(button.hidden + button.hidden) { display: none; }
+      .autostop-row { margin-left: 0; }
+      .toasts { right: 12px; bottom: 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
     }
   </style>
 </head>
 <body>
   <div class="bg"></div>
-  <div class="layout">
-    <div class="page">
-      <img class="logo" src="/mc-logo.svg" alt="Minecraft" />
+  <div class="bg-shade"></div>
 
-      <div class="card" id="card-mc">
-        <img class="card-icon" src="/mc-logo.svg" alt="Survival" />
-        <div class="title-row">
-          <div class="card-title">Survival :25565</div>
-          <button class="btn-copy" onclick="copyIp(this, 25565)">Copy IP</button>
-        </div>
-        <div class="status-row">
-          <div class="dot loading" id="dot-mc"></div>
-          <span class="status-text" id="status-mc">Checking…</span>
-        </div>
-        <div class="card-meta" id="meta-mc"></div>
-        <div class="btn-row">
-          <button class="btn-start hidden" id="start-mc" onclick="action('mc','start')">Start</button>
-          <button class="btn-stop  hidden" id="stop-mc"  onclick="action('mc','stop')">Stop</button>
-        </div>
-        <div class="feedback" id="feedback-mc"></div>
-        <div class="players-list" id="players-mc"></div>
-        <div class="autostop-row">
-          <div class="autostop" id="autostop-mc"></div>
-          <button class="btn-extend hidden" id="extend-mc" onclick="extend('mc')">+30m</button>
-        </div>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="/mc-logo.svg" alt="Minecraft" />
+        <span class="brand-name">MC Server</span>
       </div>
-
-      <div class="card" id="card-skyblock">
-        <img class="card-icon" src="/skyblock-icon.png" alt="Skyblock" />
-        <div class="title-row">
-          <div class="card-title">Skyblock :25566</div>
-          <button class="btn-copy" onclick="copyIp(this, 25566)">Copy IP</button>
-        </div>
-        <div class="status-row">
-          <div class="dot loading" id="dot-skyblock"></div>
-          <span class="status-text" id="status-skyblock">Checking…</span>
-        </div>
-        <div class="card-meta" id="meta-skyblock"></div>
-        <div class="btn-row">
-          <button class="btn-start hidden" id="start-skyblock" onclick="action('skyblock','start')">Start</button>
-          <button class="btn-stop  hidden" id="stop-skyblock"  onclick="action('skyblock','stop')">Stop</button>
-        </div>
-        <div class="feedback" id="feedback-skyblock"></div>
-        <div class="players-list" id="players-skyblock"></div>
-        <div class="autostop-row">
-          <div class="autostop" id="autostop-skyblock"></div>
-          <button class="btn-extend hidden" id="extend-skyblock" onclick="extend('skyblock')">+30m</button>
-        </div>
+      <div class="top-actions">
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch theme" title="Switch theme">
+          <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+        <a href="/logout" class="logout">Sign out</a>
       </div>
+    </header>
 
-      <div class="card" id="card-jose">
-        <img class="card-icon" src="/mc-logo.svg" alt="Jose" />
-        <div class="title-row">
-          <div class="card-title">Jose :25569</div>
-          <button class="btn-copy" onclick="copyIp(this, 25569)">Copy IP</button>
-        </div>
-        <div class="status-row">
-          <div class="dot loading" id="dot-jose"></div>
-          <span class="status-text" id="status-jose">Checking…</span>
-        </div>
-        <div class="card-meta" id="meta-jose"></div>
-        <div class="btn-row">
-          <button class="btn-start hidden" id="start-jose" onclick="action('jose','start')">Start</button>
-          <button class="btn-stop  hidden" id="stop-jose"  onclick="action('jose','stop')">Stop</button>
-        </div>
-        <div class="feedback" id="feedback-jose"></div>
-        <div class="players-list" id="players-jose"></div>
-        <div class="autostop-row">
-          <div class="autostop" id="autostop-jose"></div>
-          <button class="btn-extend hidden" id="extend-jose" onclick="extend('jose')">+30m</button>
-        </div>
-      </div>
+    <div class="layout">
+      <main>
+        <h1 class="section-title">Servers</h1>
+        <div class="servers">
 
-      <a href="/logout" class="logout">Sign out</a>
+          <section class="card" id="card-mc" data-state="loading">
+            <div class="slot"><img class="card-icon" src="/mc-logo.svg" alt="Survival" /></div>
+            <div class="id">
+              <h2 class="card-title">Survival</h2>
+              <span class="addr" data-port="25565">:25565</span>
+              <button class="btn-copy" onclick="copyIp(this, 25565)">Copy IP</button>
+            </div>
+            <div class="stat">
+              <div class="status-row">
+                <div class="dot loading" id="dot-mc"></div>
+                <span class="status-text" id="status-mc" aria-live="polite">Checking…</span>
+              </div>
+              <div class="card-meta" id="meta-mc"></div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-start hidden" id="start-mc" onclick="action('mc','start')">Start</button>
+              <button class="btn-stop  hidden" id="stop-mc"  onclick="action('mc','stop')">Stop</button>
+            </div>
+            <div class="card-foot">
+              <div class="players-list" id="players-mc"></div>
+              <div class="autostop-row">
+                <div class="autostop" id="autostop-mc"></div>
+                <button class="btn-extend hidden" id="extend-mc" onclick="extend('mc')">+30m</button>
+              </div>
+              <div class="feedback" id="feedback-mc"></div>
+            </div>
+          </section>
+
+          <section class="card" id="card-skyblock" data-state="loading">
+            <div class="slot"><img class="card-icon" src="/skyblock-icon.png" alt="Skyblock" /></div>
+            <div class="id">
+              <h2 class="card-title">Skyblock</h2>
+              <span class="addr" data-port="25566">:25566</span>
+              <button class="btn-copy" onclick="copyIp(this, 25566)">Copy IP</button>
+            </div>
+            <div class="stat">
+              <div class="status-row">
+                <div class="dot loading" id="dot-skyblock"></div>
+                <span class="status-text" id="status-skyblock" aria-live="polite">Checking…</span>
+              </div>
+              <div class="card-meta" id="meta-skyblock"></div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-start hidden" id="start-skyblock" onclick="action('skyblock','start')">Start</button>
+              <button class="btn-stop  hidden" id="stop-skyblock"  onclick="action('skyblock','stop')">Stop</button>
+            </div>
+            <div class="card-foot">
+              <div class="players-list" id="players-skyblock"></div>
+              <div class="autostop-row">
+                <div class="autostop" id="autostop-skyblock"></div>
+                <button class="btn-extend hidden" id="extend-skyblock" onclick="extend('skyblock')">+30m</button>
+              </div>
+              <div class="feedback" id="feedback-skyblock"></div>
+            </div>
+          </section>
+
+          <section class="card" id="card-jose" data-state="loading">
+            <div class="slot"><img class="card-icon" src="/mc-logo.svg" alt="Jose" /></div>
+            <div class="id">
+              <h2 class="card-title">Jose</h2>
+              <span class="addr" data-port="25569">:25569</span>
+              <button class="btn-copy" onclick="copyIp(this, 25569)">Copy IP</button>
+            </div>
+            <div class="stat">
+              <div class="status-row">
+                <div class="dot loading" id="dot-jose"></div>
+                <span class="status-text" id="status-jose" aria-live="polite">Checking…</span>
+              </div>
+              <div class="card-meta" id="meta-jose"></div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-start hidden" id="start-jose" onclick="action('jose','start')">Start</button>
+              <button class="btn-stop  hidden" id="stop-jose"  onclick="action('jose','stop')">Stop</button>
+            </div>
+            <div class="card-foot">
+              <div class="players-list" id="players-jose"></div>
+              <div class="autostop-row">
+                <div class="autostop" id="autostop-jose"></div>
+                <button class="btn-extend hidden" id="extend-jose" onclick="extend('jose')">+30m</button>
+              </div>
+              <div class="feedback" id="feedback-jose"></div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+
+      <aside class="log-panel">
+        <h2 class="section-title">Activity</h2>
+        <div class="log-list" id="log-list">
+          <div class="log-empty">No activity yet</div>
+        </div>
+      </aside>
     </div>
   </div>
 
-  <div class="log-panel">
-    <div class="log-panel-title">Activity</div>
-    <div class="log-list" id="log-list">
-      <div class="log-empty">No activity yet</div>
-    </div>
-  </div>
+  <dialog class="dialog" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-msg">
+    <form method="dialog">
+      <h2 id="confirm-title">Stop server?</h2>
+      <p id="confirm-msg"></p>
+      <div class="dialog-actions">
+        <button type="submit" value="cancel" class="btn-ghost" id="confirm-cancel" autofocus>Cancel</button>
+        <button type="submit" value="ok" class="btn-danger">Stop anyway</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" role="region" aria-label="Notifications"></div>
 
   <script>
     const SERVER_LABELS = { mc: 'Survival', skyblock: 'Skyblock', jose: 'Jose' }
     const SERVER_IP = '176.23.80.240'
+
+    document.querySelectorAll('.addr').forEach(el => {
+      el.textContent = `${SERVER_IP}:${el.dataset.port}`
+    })
 
     async function copyIp(btn, port) {
       const text = `${SERVER_IP}:${port}`
@@ -408,8 +928,49 @@
       setTimeout(() => { btn.textContent = 'Copy IP'; btn.classList.remove('copied') }, 1500)
     }
 
+    // ---- Toasts ----
+    function toast(message, timeout = 7000) {
+      const box = document.getElementById('toasts')
+      while (box.children.length >= 4) box.firstElementChild.remove()
+
+      const el = document.createElement('div')
+      el.className = 'toast'
+      el.setAttribute('role', 'alert')
+      const msg = document.createElement('div')
+      msg.className = 'toast-msg'
+      msg.textContent = message
+      const close = document.createElement('button')
+      close.className = 'toast-close'
+      close.setAttribute('aria-label', 'Dismiss')
+      close.textContent = '×'
+      el.append(msg, close)
+      box.appendChild(el)
+
+      const dismiss = () => {
+        el.classList.add('leaving')
+        setTimeout(() => el.remove(), 220)
+      }
+      close.addEventListener('click', dismiss)
+      setTimeout(dismiss, timeout)
+    }
+
+    // ---- Confirm dialog ----
+    function confirmDialog(title, message, confirmLabel) {
+      return new Promise(resolve => {
+        const dlg = document.getElementById('confirm-dialog')
+        document.getElementById('confirm-title').textContent = title
+        document.getElementById('confirm-msg').textContent = message
+        dlg.querySelector('.btn-danger').textContent = confirmLabel
+        dlg.returnValue = ''
+        dlg.addEventListener('close', () => resolve(dlg.returnValue === 'ok'), { once: true })
+        dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close('cancel') }, { once: true })
+        dlg.showModal()
+      })
+    }
+
     const serverState = {}
     const polling = {}
+    const autoStopAt = {}
 
     function formatUptime(s) {
       if (!s) return null
@@ -421,10 +982,10 @@
 
     function formatAutoStop(s) {
       if (s === null) return ''
-      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60)
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60
       if (h > 0) return `Auto-stop in ${h}h ${m}m`
-      if (m > 0) return `Auto-stop in ${m}m`
-      return `Auto-stop in <1m`
+      if (m > 0) return `Auto-stop in ${m}m ${sec}s`
+      return `Auto-stop in ${sec}s`
     }
 
     function formatLastStopped(ts) {
@@ -435,6 +996,18 @@
       if (diff < 86400) return `Stopped ${Math.floor(diff / 3600)}h ago`
       const d = new Date(ts)
       return `Stopped ${d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+    }
+
+    function playerPill(p) {
+      const name = escapeHtml(p.name)
+      const img = p.id
+        ? `<img src="https://crafatar.com/avatars/${encodeURIComponent(p.id)}?size=36&overlay" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+        : ''
+      return `<span class="player-pill"><span class="head">${img}</span>${name}</span>`
     }
 
     async function poll(server) {
@@ -448,6 +1021,7 @@
     }
 
     function setState(server, state, label, uptime, players, autoStopIn, version, lastStopped) {
+      const card        = document.getElementById('card-' + server)
       const dot         = document.getElementById('dot-' + server)
       const text        = document.getElementById('status-' + server)
       const btnStart    = document.getElementById('start-' + server)
@@ -460,6 +1034,7 @@
 
       serverState[server] = { players }
 
+      card.dataset.state = state
       dot.className = 'dot ' + (state === 'online' ? 'online' : state === 'offline' ? 'offline' : 'loading')
       text.textContent = label || state
 
@@ -471,24 +1046,30 @@
       if (state === 'online') {
         const parts = []
         const up = formatUptime(uptime)
-        if (up) parts.push(`<span>${up}</span>`)
-        if (players !== null) parts.push(`<span class="sep">·</span><span class="players">${players.online} / ${players.max} online</span>`)
-        if (version) parts.push(`<span class="sep">·</span><span>${version}</span>`)
+        if (up) parts.push(`<span class="chip">${up}</span>`)
+        if (players !== null) {
+          const pct = players.max > 0 ? Math.min(100, Math.round(players.online / players.max * 100)) : 0
+          const full = players.max > 0 && players.online >= players.max
+          parts.push(`<span class="chip players">${players.online} / ${players.max} online<span class="cap${full ? ' full' : ''}" aria-hidden="true"><i style="width:${pct}%"></i></span></span>`)
+        }
+        if (version) parts.push(`<span class="chip">${version}</span>`)
         meta.innerHTML = parts.join('')
 
         const sample = players?.sample
         if (sample && sample.length > 0) {
-          playersList.innerHTML = sample.map(p => `<span class="player-pill">${p.name}</span>`).join('')
+          playersList.innerHTML = sample.map(playerPill).join('')
         } else {
           playersList.innerHTML = ''
         }
 
+        autoStopAt[server] = autoStopIn === null ? null : Date.now() + autoStopIn * 1000
         autostop.textContent = formatAutoStop(autoStopIn)
         extendBtn.classList.toggle('hidden', autoStopIn === null)
       } else {
         const ls = state === 'offline' ? formatLastStopped(lastStopped) : null
-        meta.innerHTML = ls ? `<span>${ls}</span>` : ''
+        meta.innerHTML = ls ? `<span class="chip">${ls}</span>` : ''
         playersList.innerHTML = ''
+        autoStopAt[server] = null
         autostop.textContent = ''
         extendBtn.classList.add('hidden')
       }
@@ -521,7 +1102,11 @@
     async function action(server, cmd) {
       if (cmd === 'stop') {
         const online = serverState[server]?.players?.online || 0
-        if (online > 0 && !confirm(`${online} player${online > 1 ? 's' : ''} online — stop server anyway?`)) return
+        if (online > 0 && !(await confirmDialog(
+          `Stop ${SERVER_LABELS[server]}?`,
+          `${online} player${online > 1 ? 's' : ''} online — stop server anyway?`,
+          'Stop anyway'
+        ))) return
       }
 
       const btnId    = (cmd === 'start' ? 'start-' : 'stop-') + server
@@ -545,7 +1130,7 @@
         pollLog()
       } catch (e) {
         polling[server] = false
-        feedback.textContent = 'Error: ' + e.message
+        toast(`Couldn't ${cmd} ${SERVER_LABELS[server]}: ${e.message}`)
         poll(server)
       } finally {
         btn.disabled = false
@@ -558,6 +1143,8 @@
       try {
         await fetch('/api/extend?server=' + server, { method: 'POST' })
         poll(server)
+      } catch (e) {
+        toast(`Couldn't extend auto-stop for ${SERVER_LABELS[server]}: ${e.message}`)
       } finally {
         btn.disabled = false
       }
@@ -593,6 +1180,16 @@
     })
     pollLog()
     setInterval(pollLog, 15000)
+
+    // Tick the auto-stop countdown between polls
+    setInterval(() => {
+      SERVERS.forEach(s => {
+        const at = autoStopAt[s]
+        if (at == null) return
+        document.getElementById('autostop-' + s).textContent =
+          formatAutoStop(Math.max(0, Math.round((at - Date.now()) / 1000)))
+      })
+    }, 1000)
   </script>
 </body>
 </html>
