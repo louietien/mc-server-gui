@@ -17,6 +17,8 @@ Single-file Node.js backend (`server.js`) + single-file frontend (`public/index.
 
 **Backend** connects to the Docker daemon via the Unix socket (`/var/run/docker.sock`) using `dockerode`. Finds containers by prefix from env vars. Routes accept `?server=mc|skyblock`: `GET /api/status`, `POST /api/start`, `POST /api/stop`.
 
+`GET /health` is unauthenticated (registered before session/auth middleware) and pings the Docker socket with a 2s timeout: `200 {status:"ok"}` or `503 {status:"degraded"}`. Use it as the Coolify health check path.
+
 **Frontend** is a single vanilla HTML file served as a static asset. Shows two server cards (Survival + Skyblock), each polling `/api/status?server=<id>` every 8 seconds independently.
 
 ## Environment Variables
