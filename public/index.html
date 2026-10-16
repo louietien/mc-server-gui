@@ -83,6 +83,29 @@
       margin-bottom: 16px;
     }
 
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .title-row .card-title { margin-bottom: 0; }
+
+    .btn-copy {
+      flex: none;
+      padding: 2px 9px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(100, 116, 139, 0.12);
+      color: #94a3b8;
+      border: 1px solid rgba(100, 116, 139, 0.3);
+      border-radius: 5px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-copy:hover { background: rgba(100, 116, 139, 0.24); }
+    .btn-copy.copied { color: #22c55e; border-color: rgba(34, 197, 94, 0.4); }
+
     .status-row {
       display: flex;
       align-items: center;
@@ -284,7 +307,10 @@
 
       <div class="card" id="card-mc">
         <img class="card-icon" src="/mc-logo.svg" alt="Survival" />
-        <div class="card-title">Survival :25565</div>
+        <div class="title-row">
+          <div class="card-title">Survival :25565</div>
+          <button class="btn-copy" onclick="copyIp(this, 25565)">Copy IP</button>
+        </div>
         <div class="status-row">
           <div class="dot loading" id="dot-mc"></div>
           <span class="status-text" id="status-mc">Checking…</span>
@@ -304,7 +330,10 @@
 
       <div class="card" id="card-skyblock">
         <img class="card-icon" src="/skyblock-icon.png" alt="Skyblock" />
-        <div class="card-title">Skyblock :25566</div>
+        <div class="title-row">
+          <div class="card-title">Skyblock :25566</div>
+          <button class="btn-copy" onclick="copyIp(this, 25566)">Copy IP</button>
+        </div>
         <div class="status-row">
           <div class="dot loading" id="dot-skyblock"></div>
           <span class="status-text" id="status-skyblock">Checking…</span>
@@ -324,7 +353,10 @@
 
       <div class="card" id="card-jose">
         <img class="card-icon" src="/mc-logo.svg" alt="Jose" />
-        <div class="card-title">Jose :25569</div>
+        <div class="title-row">
+          <div class="card-title">Jose :25569</div>
+          <button class="btn-copy" onclick="copyIp(this, 25569)">Copy IP</button>
+        </div>
         <div class="status-row">
           <div class="dot loading" id="dot-jose"></div>
           <span class="status-text" id="status-jose">Checking…</span>
@@ -355,6 +387,27 @@
 
   <script>
     const SERVER_LABELS = { mc: 'Survival', skyblock: 'Skyblock', jose: 'Jose' }
+    const SERVER_IP = '176.23.80.240'
+
+    async function copyIp(btn, port) {
+      const text = `${SERVER_IP}:${port}`
+      try {
+        await navigator.clipboard.writeText(text)
+      } catch {
+        const ta = document.createElement('textarea')
+        ta.value = text
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        ta.remove()
+      }
+      btn.textContent = 'Copied!'
+      btn.classList.add('copied')
+      setTimeout(() => { btn.textContent = 'Copy IP'; btn.classList.remove('copied') }, 1500)
+    }
+
     const serverState = {}
     const polling = {}
 
